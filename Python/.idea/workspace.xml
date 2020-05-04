@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="e8610c20-1783-4c01-9538-f89604e02052" name="Default Changelist" comment="" />
+    <list default="true" id="e8610c20-1783-4c01-9538-f89604e02052" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/../Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/MPC_optimization.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/MPC_optimization.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/optimization.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/optimization.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../README.md" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -18,7 +26,11 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
   <component name="ProjectId" id="1YGKRhCoyIK3E5g9vye35MYVk00" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="autoscrollFromSource" value="true" />
     <option name="autoscrollToSource" value="true" />
@@ -29,6 +41,7 @@
   <component name="PropertiesComponent">
     <property name="DefaultHtmlFileTemplate" value="HTML File" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/app.py" />
     <property name="restartRequiresConfirmation" value="false" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
@@ -231,7 +244,7 @@
     <state x="280" y="43" key="SettingsEditor/62.0.1474.864@62.0.1474.864" timestamp="1583352162965" />
     <state x="283" y="43" key="SettingsEditor/66.0.1470.864@66.0.1470.864" timestamp="1583783685918" />
     <state x="285" y="43" key="SettingsEditor/68.0.1468.864@68.0.1468.864" timestamp="1582897510413" />
-    <state x="516" y="256" key="com.intellij.ide.util.TipDialog" timestamp="1588500239012">
+    <state x="516" y="256" key="com.intellij.ide.util.TipDialog" timestamp="1588582011036">
       <screen x="91" y="0" width="1445" height="864" />
     </state>
     <state x="495" y="256" key="com.intellij.ide.util.TipDialog/62.0.1474.864@62.0.1474.864" timestamp="1583393369345" />
@@ -242,7 +255,7 @@
     <state x="504" y="256" key="com.intellij.ide.util.TipDialog/75.0.1461.864@75.0.1461.864" timestamp="1587379818949" />
     <state x="505" y="256" key="com.intellij.ide.util.TipDialog/76.0.1460.864@76.0.1460.864" timestamp="1587112596557" />
     <state x="515" y="256" key="com.intellij.ide.util.TipDialog/90.0.1446.864@90.0.1446.864" timestamp="1587757127597" />
-    <state x="516" y="256" key="com.intellij.ide.util.TipDialog/91.0.1445.864@91.0.1445.864" timestamp="1588500239012" />
+    <state x="516" y="256" key="com.intellij.ide.util.TipDialog/91.0.1445.864@91.0.1445.864" timestamp="1588582011036" />
     <state x="483" y="181" width="672" height="678" key="search.everywhere.popup" timestamp="1588505377876">
       <screen x="91" y="0" width="1445" height="864" />
     </state>

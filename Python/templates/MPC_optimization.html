@@ -13,7 +13,7 @@
     var data_x_graph = 0;
     var data_y_graph = 0;
     $(document).ready(function() {
-        var socket = io.connect('http://localhost:8080/');
+        var socket = io.connect('http://localhost:5000/');
 
         socket.on('connect', function() {
             socket.emit('mpc_connect_websocetio','User has connected!',client_id,'');

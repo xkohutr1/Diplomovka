@@ -967,4 +967,4 @@ def disconnect(id):
 ######################################### FLASK INITIALIZATION AND PORT OF SERVER ######################################
 if __name__ == '__main__':
     g_status = 'new'
-    socketio.run(app, host='localhost', port=8080)
+    socketio.run(app, host='0.0.0.0')
