@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+    {% if client and status == "new" %}
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <h1>New optimization</h1>
+        </div>
+        <div>
+            <form action="/start/{{client.id}} " method="POST">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="basic-addon1">Cost function</span>
+                  </div>
+                  <input type="text" class="form-control" placeholder="x^2+cos(y-56*x-z)*sqrt(y)+x/(z-5)" name="CFunction">
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon2">
+                                    <div class="col">
+                                        <div class="row">Equality</div>
+                                        <div class="row">Constrains</div>
+                                    </div>
+                                </span>
+                            </div>
+                            <textarea class="form-control" rows="5" name="EqConstrains" placeholder="x*z = 2,"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon3">
+                                    <div class="col">
+                                         <div class="row">Inequality</div>
+                                        <div class="row">Constrains</div>
+                                    </div>
+                                </span>
+                            </div>
+                            <textarea class="form-control" rows="5" name="InConstrains" placeholder="x*z <= sqrt(y) <= 2,"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <div class="input-group mb-3">
+                          <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon4">Sep. variables</span>
+                          </div>
+                            <input type="text" class="form-control" placeholder="[x,y];[z]" name="SepVariable">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group-append">
+                    <button type="submit" name="button" class="btn btn-primary btn-block" value="Start New Optimization">Start</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% elif status == "in_progres" %}
+            <table  cellpadding="10" border="1">
+                <tr>
+                    <th>Optimization in progres</th>
+                </tr>
+                <tr>
+                    <td valign="top" align="center">
+                        <form action="/join/{{client.id}} " method="POST">
+                            <p>
+                                <input type="submit" name="button" value="Join"/>
+                            </p>
+                        </form>
+                    </td>
+                </tr>
+            </table>
+    {% elif status == "full" %}
+        Cakaj na dalsie moznosti.
+    {% endif %}
+{% endblock %}

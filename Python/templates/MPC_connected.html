@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <h1>Model Predictive Control design</h1>
+        </div>
+        <form action="/startMPC/{{c_id}} " method="POST">
+            <div class="row justify-content-center">
+                <div class="col" style="padding-right:20px; border-right: 1px solid #ccc; padding-top:20px">
+                    <p class="text-center"> <b>Model set-up in discrate time</b></p>
+                    <div class="row">
+                        <div class="col">
+                            <div class="radio">
+                              <label><input type="radio" id = "stat_space" name="Model_Repre" value="StateSpace">State space</label>
+                            </div>
+                            <div class="radio">
+                              <label><input type="radio" id = "dif_equation" name="Model_Repre" value="DiffEquation" checked>Differencial equastions</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        $(document).ready(function(){
+                            $('input[type="radio"]').click(function(){
+                                if($("#stat_space").is(":checked")){
+                                    $("#SS_div").attr('class', 'visible w-100');
+                                    $("#DE_div").attr('class', 'invisible');
+                                }
+                                else if($("#dif_equation").is(":checked")){
+                                    $("#DE_div").attr('class', 'visible w-100');
+                                    $("#SS_div").attr('class', 'invisible');
+                                }
+                            });
+                        });
+                    </script>
+
+                    <div class="col">
+
+                        <div class="visible w-100" id="DE_div" style="z-index: 1; position: absolute; top: 0px; left: 0px;">
+                            <div class="input-group mb-3">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">Math. expression</span>
+                              </div>
+                                <textarea type="form-control" class="form-control scroller" placeholder="x1(k+1) = x1(k)+x2(k)*u1(k)+x3(k)*2;&#13;&#10;x2(k+1) = x1(k)*x2(k)+u1(k);&#13;&#10;x3(k+1) = x3(k)+u1(k);&#13;&#10;y(k) = x2(k)" name="DF_equation" rows="4"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="invisible" id="SS_div" style="z-index: 1; position: absolute; top: 0px; left: 0px;">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="input-group mb-3">
+                                      <div class="input-group-prepend">
+                                        <span class="input-group-text" id="basic-addon2">A:</span>
+                                      </div>
+                                        <input type="text" class="form-control" placeholder="[1,1; 2,2]" name="matrix_A">
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="input-group mb-3">
+                                      <div class="input-group-prepend">
+                                        <span class="input-group-text" id="basic-addon3">B:</span>
+                                      </div>
+                                        <input type="text" class="form-control" placeholder="[5; 6]" name="matrix_B">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="input-group mb-3">
+                                      <div class="input-group-prepend">
+                                        <span class="input-group-text" id="basic-addon40">C:</span>
+                                      </div>
+                                        <input type="text" class="form-control" placeholder="[1,1; 2,2]" name="matrix_C">
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="input-group mb-3">
+                                      <div class="input-group-prepend">
+                                        <span class="input-group-text" id="basic-addon50">D:</span>
+                                      </div>
+                                        <input type="text" class="form-control" placeholder="[5; 6]" name="matrix_D">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col w-100" style="top:122px">
+                        <div class="input-group mb-3">
+                          <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon4">x:</span>
+                          </div>
+                            <input type="text" class="form-control" placeholder="[x1;x2;x3]" name="matrix_x">
+                        </div>
+                    </div>
+                    <div class="col w-100" style="top:122px">
+                        <div class="input-group mb-3">
+                          <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon55">u:</span>
+                          </div>
+                            <input type="text" class="form-control" placeholder="[u1]" name="matrix_u">
+                        </div>
+                    </div>
+                    <div class="col w-100" style="top:122px">
+                        <div class="input-group mb-3">
+                          <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon5">y:</span>
+                          </div>
+                            <input type="text" class="form-control" placeholder="[y]" name="matrix_y">
+                        </div>
+                    </div>
+                </div>
+                <div class="col" style="padding-top:20px">
+                    <p class="text-center"><b>Optimization set-up</b></p>
+                    <div class="row">
+                        <div class="col">
+                            <div class="input-group mb-3">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon7">Nmin</span>
+                              </div>
+                                <input type="text" class="form-control" placeholder="5" name="Nmin">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group mb-3">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon8">Nmax</span>
+                              </div>
+                                <input type="text" class="form-control" placeholder="50" name="Nmax">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group mb-3">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon9">Q</span>
+                              </div>
+                                <input type="text" class="form-control" placeholder="[1,0; 0,1]" name="matrix_Q">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="input-group mb-3">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon10">x_ref</span>
+                              </div>
+                                <input type="text" class="form-control" placeholder="[20; 20; 20]" name="x_ref">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group mb-3">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon11">x_0</span>
+                              </div>
+                                <input type="text" class="form-control" placeholder="[1; 2; 3]" name="x_zero">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group mb-3">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon12">R</span>
+                              </div>
+                                <input type="text" class="form-control" placeholder="[1,0; 0,1]" name="matrix_R">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col w-100">
+                            <div class="input-group mb-3">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon13">Inequality C.</span>
+                              </div>
+                                <textarea type="form-control" class="form-control scroller" placeholder="-5<=x<=5" name="InCons" rows="4"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col w-100">
+                            <div class="input-group mb-3">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon14">Equality C.</span>
+                              </div>
+                                <textarea type="form-control" class="form-control scroller" placeholder="x1+u1 = 5" name="EqCons" rows="4"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <div class="col" style="padding-top:5px">
+                    <div class="row">
+                        <div class="input-group mb-3">
+                          <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon6">Constants</span>
+                          </div>
+                            <textarea type="form-control" class="form-control scroller" placeholder="k = 20; w = 2; ..." name="Constants" rows="1"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group-append">
+                        <button type="submit" name="button" class="btn btn-primary btn-block" value="Start MPC" onclick="myFunction()">Start</button>
+                </div>
+            <script>
+                function myFunction() {
+                  window.open(index.html);
+                }
+            </script>
+        </form>
+    </div>
+
+{% endblock %}
+<span class="button-checkbox">
+    <button type="button" class="btn btn-primary active" data-color="primary"><i class="state-icon glyphicon glyphicon-check"></i>&nbsp;Unchecked</button>
+    <input type="checkbox" class="hidden">
+</span>

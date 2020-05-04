@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+<script  type="text/javascript" src="/static/js/script_opt.js"></script>
+<script type="text/php" src="/static/php/ajax.php"></script>
+
+<script>
+    var client_id = '{{ c_id }}';
+    var number_of_optimization = 0;
+    var solutions_value = [];
+    var iterations = [];
+    var data_x_graph = 0;
+    var data_y_graph = 0;
+    $(document).ready(function() {
+        var socket = io.connect('http://localhost:8080/');
+
+        socket.on('connect', function() {
+            socket.emit('mpc_connect_websocetio','User has connected!',client_id,'');
+        });
+
+        socket.on('js_worker', function(data){
+            if (data['x'] != 'ADMM'){
+                data_y_graph = data['x'];
+                data_x_graph = data_x_graph + 1;
+                myChart.data.labels.push(data_x_graph);
+                myChart.data.datasets.forEach((dataset) => {
+                    dataset.data.push(data_y_graph);
+                });
+                myChart.update();
+            }
+            if (data.hasOwnProperty(client_id)){
+                $("#solution_find").empty();
+
+                var grad = data[client_id];
+                var solution = gdmethod(grad);
+                var kmax = 10000;
+                solutions_value.push(solution[1])
+
+                number_of_optimization = number_of_optimization +1;
+                var button_optimization = number_of_optimization;
+                console.log('posielam !!')
+                socket.emit('ADMN_calulate',solution,client_id);
+                if (number_of_optimization > 1){
+                    var pom_n = solutions_value[number_of_optimization-2].length;
+                    var pom_m = 0;
+                    for (i = 0; i < (number_of_optimization-1); i++){
+                        pom_m = pom_m + solutions_value[i].length;
+                    };
+                    for (i = pom_m-pom_n+1; i < pom_m+1; i++){
+                        $('#table_of_solutions > tbody > tr:nth-child(' + i + ')').hide();
+                    };
+                };
+                for (i = 0; i < solution[0].length; i++){
+                    $('#table_of_solutions  > tbody:last-child').append('<tr id="' + number_of_optimization + '"><td>' + solution[1][i] + '</td><td>' + solution[0][i] + '</td></tr>');
+                };
+                $("#solution_find").append('Solution found');
+                iterations.push(solution[2])
+                $("#iteration").html(solution[2]);
+
+
+                if (button_optimization == number_of_optimization){
+                    $("#next").attr('class', 'btn btn-dark invisible');
+                } else{
+                    $("#next").attr('class', 'btn btn-dark visible');
+                }
+
+                if (button_optimization < 2){
+                    $("#previous").attr('class', 'btn btn-dark invisible');
+                } else{
+                    $("#previous").attr('class', 'btn btn-dark visible');
+                }
+
+                button_optimization = number_of_optimization;
+                $("#next").html(button_optimization+1);
+                $("#previous").html(button_optimization-1);
+                $("#last").html(button_optimization);
+
+                $("#last").unbind("click").on('click', function(){
+                    var pom_n = 0;
+                    for (i=0;i < button_optimization-1; i++){
+                        pom_n = pom_n + solutions_value[i].length;
+                    };
+                    for(i=pom_n+1; i < pom_n+solutions_value[button_optimization-1].length+1; i++){
+                        $('#table_of_solutions > tbody > tr:nth-child(' + i + ')').hide();
+                    };
+
+                    button_optimization = number_of_optimization;
+                    $("#next").attr('class', 'btn btn-dark invisible');
+                    $("#last").html(button_optimization);
+                    $("#next").html(button_optimization+1);
+                    $("#previous").html(button_optimization-1);
+                    if (button_optimization > 1){
+                        $("#previous").attr('class', 'btn btn-dark visible');
+                    };
+                    $("#iteration").html(iterations[button_optimization-1]);
+                    var pom_n = 0;
+                    for (i=0;i < button_optimization-1; i++){
+                        pom_n = pom_n + solutions_value[i].length;
+                    };
+                    for(i=pom_n+1; i < pom_n+solutions_value[button_optimization-1].length+1; i++){
+                        $('#table_of_solutions > tbody > tr:nth-child(' + i + ')').show();
+                    };
+                });
+
+                $("#next").unbind("click").on('click', function(){
+                    var pom_n = 0;
+                    for (i=0;i < button_optimization-1; i++){
+                        pom_n = pom_n + solutions_value[i].length;
+                    };
+                    for(i=pom_n+1; i < pom_n+solutions_value[button_optimization-1].length+1; i++){
+                        $('#table_of_solutions > tbody > tr:nth-child(' + i + ')').hide();
+                    };
+
+                    button_optimization += 1;
+                    $("#next").html(button_optimization+1);
+                    $("#previous").html(button_optimization-1);
+                    if (button_optimization == number_of_optimization){
+                        $("#next").attr('class', 'btn btn-dark invisible');
+                    } else {
+                        $("#next").attr('class', 'btn btn-dark visible');
+                    }
+                    if (button_optimization > 1){
+                        $("#previous").attr('class', 'btn btn-dark visible');
+                    };
+                    $("#iteration").html(iterations[button_optimization-1]);
+                    var pom_n = 0;
+                    for (i=0;i < button_optimization-1; i++){
+                        pom_n = pom_n + solutions_value[i].length;
+                    };
+                    for(i=pom_n+1; i < pom_n+solutions_value[button_optimization-1].length+1; i++){
+                        $('#table_of_solutions > tbody > tr:nth-child(' + i + ')').show();
+                    };
+                });
+
+                $("#previous").unbind("click").on('click', function(){
+                    var pom_n = 0;
+                    for (i=0;i < button_optimization-1; i++){
+                        pom_n = pom_n + solutions_value[i].length;
+                    };
+                    for(i=pom_n+1; i < pom_n+solutions_value[button_optimization-1].length+1; i++){
+                        $('#table_of_solutions > tbody > tr:nth-child(' + i + ')').hide();
+                    };
+
+                    button_optimization = button_optimization - 1;
+                    $("#previous").html(button_optimization-1);
+                    $("#next").html(button_optimization+1);
+                    $("#next").attr('class', 'btn btn-dark visible');
+                    if (button_optimization < 2){
+                        $("#previous").attr('class', 'btn btn-dark invisible');
+                    } else {
+                        $("#previous").attr('class', 'btn btn-dark visible');
+                    }
+                    if (button_optimization != number_of_optimization){
+                        $("#next").attr('class', 'btn btn-dark visible');
+                    };
+                    $("#iteration").html(iterations[button_optimization-1]);
+                    var pom_n = 0;
+                    for (i=0;i < button_optimization-1; i++){
+                        pom_n = pom_n + solutions_value[i].length;
+                    };
+                    for(i=pom_n+1; i < pom_n+solutions_value[button_optimization-1].length+1; i++){
+                        $('#table_of_solutions > tbody > tr:nth-child(' + i + ')').show();
+                    };
+                });
+            };
+        });
+        $(".alert-success").hide();
+        $("#reference_button").unbind("click").on('click', function(){
+            var clickBtnValue = $("#x_ref").val();
+            if(clickBtnValue.length > 0){
+                socket.emit('change_reference', clickBtnValue, client_id,'');
+            }
+        });
+        $("#stop_button").unbind("click").on('click', function(){
+            socket.emit('change_reference', '', client_id,2);
+        });
+        socket.on('reference_changed', function(msg) {
+            $("#Simulacion_alert").html(msg);
+            $(".alert-success").fadeTo(500, 500).slideUp(500, function(){
+            $(".alert-success").slideUp(500);});
+        });
+    });
+</script>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col">
+            <h1 id="solution_find"></h1>
+        </div>
+        <div class="col justify-content-center">
+            <div class="input-group" >
+                <div class="input-group-preppend">
+                    <button type="submit" id="stop_button" class="btn btn-dark">Stop Simulation</button>
+                </div>
+                <div class="custom-input">
+                    <input type="text" class="form-control" placeholder="New Reference" id="x_ref" name="x_ref">
+                </div>
+                <div class="input-group-append">
+                    <button type="submit" id="reference_button" class="btn btn-dark">Send</button>
+                </div>
+            </div>
+            <div class="alert-messages">
+                <div class="alert alert-success" role="alert" id = 'Simulacion_alert'></div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-4 ">
+          <table class="table table-hover table-bordered text-center table-sm"  id="table_of_solutions">
+              <thead class="thead-dark">
+                <tr>
+                  <th scope="col">Iteration :</th>
+                  <th scope="col" id="iteration"></th>
+                </tr>
+                <tr>
+                  <th scope="col">Variable</th>
+                  <th scope="col">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+
+              </tbody>
+          </table>
+          <div class="btn-group special">
+            <button type="button" class="btn btn-dark" id="previous" value=""></button>
+            <button type="button" class="btn btn-dark" id="next" value=""></button>
+            <button type="button" class="btn btn-dark" id="last" value=""></button>
+          </div>
+      </div>
+      <div class="col-sm-8" id="add_graph">
+          <div class="chart-container">
+            <canvas id="myChart" width="200" height="100"></canvas>
+          </div>
+
+        <script>
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [data_x_graph],
+                    datasets: [{
+                        label: 'x1',
+                        data: [data_y_graph],
+                        steppedLine: true,
+                        borderColor: ['rgba(0,0,255,1)'],
+                        backgroundColor: "transparent",
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        yAxes: [{
+                            stacked: true,
+                            ticks: {
+                                suggestedMin: 0,
+                                suggestedMax: 6
+                            }
+                        }]
+                    }
+                }
+            });
+        </script>
+
+      </div>
+    </div>
+</div>
+{% endblock %}

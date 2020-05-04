@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script  type="text/javascript" src="/static/js/script_opt.js"></script>
+<script>
+    var client_id = '{{ c_id }}';
+    $(document).ready(function() {
+        var socket = io.connect('http://localhost:8080/');
+
+        socket.on('connect', function() {
+            socket.emit('connect_websocetio','User has connected!',client_id);
+        });
+
+        socket.on('js_worker', function(data){
+            if (data.hasOwnProperty(client_id)){
+                $("#solution").empty();
+                $("#variables").empty();
+                $("#iteration").empty();
+                $("#solution_find").empty();
+
+                var grad = data[client_id];
+                var solution = gdmethod(grad);
+                var kmax = 10000;
+
+                if (solution[2] < kmax){
+                    $("#solution_find").append('Najdený výsledok');
+                    for (i = 0; i < solution[0].length; i++){
+                        $("#solution").append(solution[0][i]+';');
+                        $("#variables").append(solution[1][i]+';');
+                    };
+                    $("#iteration").append(solution[2]);
+                }else if (solution[2] > kmax){
+                    socket.emit('opt_solution',solution,client_id);
+                    for (i = 0; i < solution[0].length; i++){
+                        $("#solution").append(solution[0][i]+';');
+                        $("#variables").append(solution[1][i]+';');
+                    };
+                    $("#iteration").append(solution[2]);
+                };
+            };
+        });
+    });
+</script>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-auto">
+            <table border="1" >
+                <tr>
+                    <th>
+                        Variable
+                    </th>
+                    <th>
+                        Opt. Solution
+                    </th>
+                    <th>
+                        Iteration
+                    </th>
+                </tr>
+                <tr align="center">
+                    <td id="variables" ></td>
+                    <td id="solution" ></td>
+                    <td id="iteration"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-auto">
+            <h1 id="solution_find"></h1>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="row">
+            <div class="col">
+                <form action="/" method="POST">
+                    <input type="submit" name="button" value="Model Predictiv Control"/>
+                </form>
+            </div>
+            <div class="col">
+                <form action="/" method="POST">
+                    <input type="submit" name="button" value="Decentralised Optimization"/>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if show == 'show' %}
+        <div  class="row justify-content-center">
+            <form action="/" method="POST">
+                <input type="submit" name="button" value="Show Database"/>
+            </form>
+        </div>
+    {% else %}
+        <div  class="row justify-content-md-center">
+            <form action="/" method="POST">
+                <input type="submit" name="button" value="Hide Database" />
+            </form>
+        </div>
+        <div class="row justify-content-md-center">
+                <table border="2">
+                    <tr>
+                        <th>ID</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                     {% for show_me in show_me %}
+                        <tr>
+                            <td>{{ show_me.id }}</td>
+                            <td>{{ show_me.date_created}}</td>
+                            <td>{{ show_me.status}}</td>
+                            <td>
+                                <a href="/delete/{{show_me.id}}">Delete</a>
+                                <br>
+                                <a href="">Update</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

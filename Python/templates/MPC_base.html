@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="row">
+            <form action="/pass_to_startMPC/{{c_id}}" method="POST">
+                <div class="col">
+                    <input type="submit" name="button" value="New Model Predictiv Control"/>
+                </div>
+            </form>
+        </div>
+
+        <script>
+             var MPC = {{ MPC }};
+             $(document).ready(function(){
+                 for(i = 0; i < MPC.length; i++) {
+                     $('body').append('<div class="row justify-content-center"><form action="/joinMPC/{{c_id}}/' + MPC[i] + '" method="POST"><div class="col"><input type="submit" name="button" value="JOIN: MPC' + MPC[i] + '"/></div></form> </div>');
+                    }
+                });
+        </script>
+    </div>
+
+{% endblock %}

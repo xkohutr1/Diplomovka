@@ -1,0 +1,7 @@
+numpy
+sympy
+flask
+datetime
+flask_socketio
+flask_migrate
+flask_sqlalchemy

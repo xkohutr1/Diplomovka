@@ -1,0 +1,26 @@
+function gdmehod(funk, funk_var){
+    grad = math.derivative(funk, funk_var);
+
+    /* Pomocne premenne */
+   var epsilon = math.pow(1*10,-2);
+   var tD = 2;
+   var kmax = 10000;
+    math_grad = math.derivative(funk, funk_var);
+   var grad_x = 20;
+    // len zatial
+   var x0 = 20;
+   var x_v = x0;
+   var k = 1;
+    while (math.norm(grad_x,2) > 0.01){
+        t = td;
+        grad_x = math_grad.evaluate({x: x_v}); // treba zistiti ako tam nahadzat vsetkym premennym cisla
+        da = -grad_x;
+
+        k++;
+        x_v = x_v + t*da;
+        if (k === kmax){
+            break;
+        }
+    }
+return x_v
+}

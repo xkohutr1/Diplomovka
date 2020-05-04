@@ -1,0 +1,11 @@
+        var funk = math.matrix();
+        var variable = '{{ SFunction.Variable }}';
+        {% for i in range((SFunction.Functions|length)) %}
+            funk = math.concat(funk, ['{{ SFunction.Functions[SFunction.Variable[i]] }}'], 0);
+        {% endfor %}
+        document.write('ahoj');
+        
+        var x = gdmethod(x^2, x);
+        document.write(x);
+
+        document.write(gdmethod(funk, variable));
