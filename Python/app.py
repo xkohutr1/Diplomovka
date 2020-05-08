@@ -36,7 +36,7 @@ socketio = SocketIO(app)
 class Clients(db.Model):
     __bind_key__ = 'Clients'
     id = db.Column(db.Integer, primary_key=True)
-    status = db.Column(db.Integer, index=True)  # 1- Pripojený (Connected), 2- Priparvený na opt. (ready for optimization), 3- Odpojený (Disconnected)
+    status = db.Column(db.Integer, index=True)  # 1- Pripojený (Connected), 2- Priparvený na opt. (ready for optimization), 3- Odpojený (Disconnected) // MPC 1 -||-, 4- Pripraveny na OPT 5- Disconnect, 3 -||-
     MPC_optimization = db.Column(db.Integer, index=True)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -500,10 +500,17 @@ def startMPC(id):
 def joinMPC(id, Optimization_id):
     print('Join function')
     ######################################### Connect client to active clients #########################################
-    User = Clients.query.get_or_404(id)
-    User.status = 4
-    User.MPC_optimization = Optimization_id
-    db.session.commit()
+    Is_in_clients = db.session.query(Clients).filter(Clients.id == id). \
+        filter(Clients.status != 1).count()
+
+    if Is_in_clients == 0:
+        User = Clients.query.get_or_404(id)
+        User.status = 4
+        User.MPC_optimization = Optimization_id
+        db.session.commit()
+        Disconnect = False
+    else:
+        Disconnect = True
 
     #################################### CALLCULTION IN PROGES WIAT !!!!!!!!! ##########################################
     wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
@@ -665,15 +672,18 @@ def joinMPC(id, Optimization_id):
 
     try:
         db.session.query(MPC_Worker_data).filter(MPC_Worker_data.MPC_optimization_id == Optimization_id). \
-            filter(MPC_Worker_data.Status == 4).delete()
+            filter(MPC_Worker_data.Status != 1).delete()
         db.session.commit()
         db.session.query(MPC_Worker).filter(MPC_Worker.MPC_optimization_id == Optimization_id). \
-            filter(MPC_Worker.Status == 4).delete()
+            filter(MPC_Worker.Status != 1).delete()
         db.session.commit()
     except:
         print('Nepodarilo sa deletnut stare udaje')
-    print('koniec')
-    return render_template('MPC_optimization.html', c_id=id)
+
+    if Disconnect == True:
+        socketio.emit('reconnect', id)
+    else:
+        return render_template('MPC_optimization.html', c_id=id)
 
 
 ################################################# REFERENCE CHANGE FUNCTION ############################################
@@ -749,14 +759,19 @@ def ADMN_calulate(solution, client_id):
 
     Optimizatio_ID = MPC_Worker_data.query.filter(MPC_Worker_data.Client_id == client_id).first()
     Optimizatio_ID = Optimizatio_ID.MPC_optimization_id
+
     ################################## FIND IF SOMEONE JOIN TO OPTIMIZZATION ###########################################
-    Clients_in_optimization = db.session.query(Clients).filter(Clients.MPC_optimization == Optimizatio_ID).all()
+    Clients_in_disconnect = db.session.query(Clients).filter(Clients.MPC_optimization == Optimizatio_ID). \
+        filter(Clients.status == 5).count()
+    Clients_in_optimization = db.session.query(Clients).filter(Clients.MPC_optimization == Optimizatio_ID). \
+        filter(Clients.status == 4).all()
     stop_someone_is_in_join = False
     for client in Clients_in_optimization:
         client_in_workers = db.session.query(MPC_Worker).filter(MPC_Worker.Client_id.like(client.id)). \
             filter(MPC_Worker.MPC_optimization_id == Optimizatio_ID).count()
-        if client_in_workers == 0:
+        if (client_in_workers == 0) or (Clients_in_disconnect > 0):
             stop_someone_is_in_join = True
+
     if stop_someone_is_in_join == True:
         print('Stop someone is waiting')
     elif stop_someone_is_in_join == False:
@@ -764,19 +779,66 @@ def ADMN_calulate(solution, client_id):
         for i in range(len(MPC_Workers_data)):
             for ii in range(len(variable)):
                 if MPC_Workers_data[i].Variable == variable[ii]:
-                    MPC_Workers_data[i].Optimal_value = opt_sol[ii]
-                    MPC_Workers_data[i].Iteration = iteration
-                    MPC_Workers_data[i].Status = 2
-                    db.session.commit()
+                    try:
+                        MPC_Workers_data[i].Optimal_value = opt_sol[ii]
+                        MPC_Workers_data[i].Iteration = iteration
+                        MPC_Workers_data[i].Status = 2
+                        db.session.commit()
+                    except:
+                        print('Neulozili sa udaje po optimalizacií')
+
         #################################### FIND IF ALL WORKERS END OPTIMISATION ##########################################
         wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
                           filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
         Lambda_in_wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
                                     filter(MPC_Worker_data.Variable.contains('lambda')). \
                                     filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
+        '''        ################################## PATCH FOR DABASE MAGICK :D ##################################################
+        if wait_for_worker-Lambda_in_wait_for_worker < 0:
+            try:
+                Workers = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+                    filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).all()
+                Lambdas = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+                    filter(MPC_Worker_data.Variable.contains('lambda')). \
+                    filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).all()
+                for worker in Workers:
+                    find_and_delet = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+                        filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID). \
+                        filter(MPC_optimization.Variables == worker.Variables).all()
+                    find_and_delet2 = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+                        filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID). \
+                        filter(MPC_optimization.Variables == worker.Variables).all()
+                    if len(find_and_delet) > 1:
+                        for i in range(1,len(find_and_delet),1):
+                            Delete = find_and_delet[i]
+                            Delete.delete()
+                            db.session.commit()
+                            Delete = find_and_delet2[i]
+                            Delete.delete()
+                            db.session.commit()
 
+                for Lambda in Lambdas:
+                    find_and_delet = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+                        filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID). \
+                        filter(MPC_optimization.Variables == Lambda.Variables).all()
+                    if len(find_and_delet) > 1:
+                        for i in range(1,len(find_and_delet),1):
+                            Delete = find_and_delet[i]
+                            Delete.delete()
+                            db.session.commit()
+            except:
+                print('Patch for database magick faild')'''
+
+        #################################### FIND IF ALL WORKERS END OPTIMISATION ######################################
+        wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+                          filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
+        Lambda_in_wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+                                    filter(MPC_Worker_data.Variable.contains('lambda')). \
+                                    filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
+
+        ############################################# AFTER ALL WORKERS ARE DONE #######################################
         if wait_for_worker-Lambda_in_wait_for_worker == 0:
-            ############################################# AFTER ALL WORKERS ARE DONE #######################################
+
             print('All worker complet optimization')
             ######################################## WORK WHIT NEW DATA SET ################################################
             from function import MPC_Worker_Data_Grup, MPC_Worker_Varialbe_value, Calculate_criteria, Simulation
@@ -900,9 +962,6 @@ def ADMN_calulate(solution, client_id):
                         data['x'] = value_x0[0]
                         socketio.emit('js_worker', data=data, broadcast=True)
                     else:
-                        """MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == Optimizatio_ID).first()
-                        MPC.Status = 2
-                        db.session.commit()"""
                         print('MPC bring system to referenc')
                         try:
                             db.session.query(MPC_Worker).filter(MPC_Worker.MPC_optimization_id == Optimizatio_ID).delete()
@@ -938,32 +997,45 @@ def delete(id):
 def disconnect(id):
     try:
         Client_to_disconnect = Clients.query.get_or_404(id)
-        Client_to_disconnect.status = 3
+        Client_to_disconnect.status = 5
         db.session.commit()
 
-        MPC_id = db.session.query(MPC_Worker).filter(MPC_Worker.Client_id == id).first()
-        MPC_id = MPC_id.MPC_optimization_id
+        MPC_id = db.session.query(Clients).filter(Clients.id == id).first()
+        MPC_id = MPC_id.MPC_optimization
 
-        count_workers = db.session.query(MPC_Worker).filter(MPC_Worker.Client_id != id). \
-            filter(MPC_Worker.MPC_optimization_id == MPC_id).count()
-        if count_workers > 0:
-            worker = db.session.query(MPC_Worker).filter(MPC_Worker.Client_id != id). \
-                filter(MPC_Worker.MPC_optimization_id == MPC_id).first()
-            joinMPC(worker.id,MPC_id)
+        Clients_in_optimization = db.session.query(Clients).filter(Clients.id != id). \
+                                filter(Clients.status == 4). \
+                                filter(Clients.MPC_optimization == MPC_id).count()
+
+        #################################### CALLCULTION IN PROGES WIAT !!!!!!!!! ######################################
+        wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+            filter(MPC_Worker_data.MPC_optimization_id == MPC_id).count()
+
+        while wait_for_worker < 0:
+            wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+                filter(MPC_Worker_data.MPC_optimization_id == MPC_id).count()
+        if Clients_in_optimization > 0:
+            client = db.session.query(Clients).filter(Clients.id != id). \
+                filter(Clients.MPC_optimization == MPC_id).\
+                filter(Clients.status == 4).first()
+            joinMPC(client.id,MPC_id)
+
         else:
-            db.session.query(MPC_Worker).filter(MPC_Worker.Client_id == id).delete()
+            db.session.query(MPC_Worker).filter(MPC_Worker.MPC_optimization_id == MPC_id).delete()
             db.session.commit()
-            db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Client_id == id).delete()
+            db.session.query(MPC_Worker_data).filter(MPC_Worker_data.MPC_optimization_id == MPC_id).delete()
             db.session.commit()
             MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == MPC_id).first()
             MPC.Status = 2
             db.session.commit()
     except:
         print('Pokazilo sa prepojene disconnect a join')
-    try:
-        return render_template('index.html', show = 'show')
-    except:
-        return 'There was a problem whit disconnection'
+
+    Client_to_disconnect = Clients.query.get_or_404(id)
+    Client_to_disconnect.status = 3
+    db.session.commit()
+    return render_template('index.html', show = 'show')
+
 ######################################### FLASK INITIALIZATION AND PORT OF SERVER ######################################
 if __name__ == '__main__':
     g_status = 'new'

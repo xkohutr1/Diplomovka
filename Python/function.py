@@ -357,6 +357,11 @@ class creat_functions:
 
         model = substitution(x_raw, Model_Equation, '', variables)
         model = model.sol  # General Model
+        print(model)
+        for m in range(len(model)):
+            pom_model = substitute_numbers(model[m], Constants)
+            model[m] = pom_model.sol
+        print(model)
 
         FUN = {}
         Nmin = int(Nmin) #Predikcny horizont

@@ -1,21 +1,280 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <script type="text/javascript">
+        function validateForm(){
+            var divsToHide = document.getElementsByClassName("popuptext");
+            for(var i = 0; i < divsToHide.length; i++){
+                if(window.getComputedStyle(divsToHide[i]).visibility === "visible"){
+                    divsToHide[i].classList.toggle("show");
+                }
+            }
+
+            var popup_name = [];
+            var empty = true;
+            var matrix = true;
+            var dimensions = true;
+
+            var Mx = document.MPC_form.matrix_x.value;
+            var Mu = document.MPC_form.matrix_u.value;
+            var Nmin = document.MPC_form.Nmin.value;
+            var MQ = document.MPC_form.matrix_Q.value;
+            var MR = document.MPC_form.matrix_R.value;
+            var Mxref = document.MPC_form.x_ref.value;
+            var Mxzero = document.MPC_form.x_zero.value;
+            var IC = document.MPC_form.InCons.value;
+            var EC = document.MPC_form.EqCons.value;
+
+            var Model = document.MPC_form.Model_Repre.value;
+            /* Matrix check */
+            MQ = MQ.split(';');
+            MR = MR.split(';');
+            Mx = Mx.split(';');
+            Mu = Mu.split(';');
+            Mxref = Mxref.split(';');
+            Mxzero = Mxzero.split(';');
+
+            /////////////////////////////////////////// MATRIX ROWS ////////////////////////////////////////////////////
+            var Mx_r = Mx.length;
+            var Mu_r = Mu.length;
+            var Mxref_r = Mxref.length;
+            var Mxzero_r = Mxzero.length;
+            var MQ_r = MQ.length;
+            var MR_r = MR.length;
+
+            if (Model == 'StateSpace'){
+                var MA = document.MPC_form.matrix_A.value;
+                var MB = document.MPC_form.matrix_B.value;
+                /* Matrix check */
+                MA = MA.split(';');
+                MB = MB.split(';');
+
+                /////////////////////////////////////////// MATRIX ROWS ////////////////////////////////////////////////
+                var MA_r = MA.length;
+                var MB_r = MB.length;
+
+                ////////////////////////////////////////// DIMENSIONS CHECK ////////////////////////////////////////////
+                var MA_s = MA[0].split(',').length;
+                for(i=1; i<MA_r; i++){
+                    if (MA[i].split(',').length != MA_s){
+                        $("#popupMA").html('Dimensions of array A are not consistent.');
+                        dimensions = false;
+                        popup_name.push('popupMA');
+                    }
+                    MA_s = MA[i].split(',').length;
+                }
+
+                var MB_s = MB[0].split(',').length;
+                for(i=1; i<MB_r; i++){
+                    if (MB[i].split(',').length != MB_s){
+                        $("#popupMB").html('Dimensions of array B are not consistent.');
+                        dimensions = false;
+                        popup_name.push('popupMB');
+                    }
+                    MB_s = MB[i].split(',').length;
+                }
+
+                ////////////////////////////////////// MATRIX ROWS == MATRIX ROWS //////////////////////////////////////
+                if (MA_r != MB_r){
+                     $("#popupMA").html('Wrong dimensions A - B.');
+                     $("#popupMB").html('Wrong dimensions B - A.');
+                     matrix = false;
+                     popup_name.push('popupMA');
+                     popup_name.push('popupMB');
+                }
+
+                if (MB_s != Mu_r){
+                     $("#popupMB").html('Wrong dimensions B - u.');
+                     $("#popupMu").html('Wrong dimensions u - B.');
+                     matrix = false;
+                     popup_name.push('popupMB');
+                     popup_name.push('popupMu');
+                }
+
+                if (MA_s != Mx_r){
+                     $("#popupMA").html('Wrong dimensions A - x.');
+                     $("#popupMx").html('Wrong dimensions x - A.');
+                     matrix = false;
+                     popup_name.push('popupMA');
+                     popup_name.push('popupMx');
+                }
+
+                /////////////////////////////////////////// EMPTY AND REQUIRED /////////////////////////////////////////
+                if (MA == ''){
+                     $("#popupMA").html('Required.');
+                     empty = false;
+                     popup_name.push('popupMA');
+                }
+
+                if (MB == ''){
+                     $("#popupMB").html('Required.');
+                     empty = false;
+                     popup_name.push('popupMB');
+                }
+            } else {
+                var DE = document.MPC_form.DF_equation.value;
+                /* Matrix check */
+                DE = DE.split(';');
+
+                /////////////////////////////////////////// MATRIX ROWS ////////////////////////////////////////////////
+                var DE_r = DE.length;
+
+                ////////////////////////////////////// MATRIX ROWS == MATRIX ROWS //////////////////////////////////////
+                if (DE_r != Mx_r){
+                     $("#popupDE").html('Wrong dimensions: Do not forgot add ";" after end of equation.');
+                     $("#popupMx").html('Wrong dimensions.');
+                     matrix = false;
+                     popup_name.push('popupDE');
+                     popup_name.push('popupMx');
+                }
+
+                /////////////////////////////////////////// EMPTY AND REQUIRED /////////////////////////////////////////
+                if (DE == ''){
+                     $("#popupDE").html('Required.');
+                     empty = false;
+                     popup_name.push('popupDE');
+                }
+            }
+
+            ////////////////////////////////////////// DIMENSIONS CHECK ////////////////////////////////////////////
+            var MQ_s = MQ[0].split(',').length;
+            for(i=1; i<MQ_r; i++){
+                if (MQ[i].split(',').length != MQ_s){
+                    $("#popupMQ").html('Dimensions of array Q are not consistent.');
+                    dimensions = false;
+                    popup_name.push('popupMQ');
+                }
+                MQ_s = MQ[i].split(',').length;
+            }
+
+            var MR_s = MR[0].split(',').length;
+            for(i=1; i<MR_r; i++){
+                if (MR[i].split(',').length != MR_s){
+                    $("#popupMR").html('Dimensions of array R are not consistent.');
+                    dimensions = false;
+                    popup_name.push('popupMR');
+                }
+                MR_s = MR[i].split(',').length;
+            }
+
+            ////////////////////////////////////// MATRIX ROWS == MATRIX ROWS //////////////////////////////////////////
+            if (Mxref_r != Mx_r){
+                 $("#popupMx").html('Wrong dimensions x - x_ref.');
+                 $("#popupMxref").html('Wrong dimensions x_ref - x.');
+                 matrix = false;
+                 popup_name.push('popupMx');
+                 popup_name.push('popupMxref');
+            }
+
+            if (Mxzero_r != Mx_r){
+                 $("#popupMx").html('Wrong dimensions x - x_0.');
+                 $("#popupMzero").html('Wrong dimensions x_0 - x.');
+                 matrix = false;
+                 popup_name.push('popupMx');
+                 popup_name.push('popupMxzero');
+            }
+
+            if ((Mx_r != MQ_r) || (Mx_r != MQ_s)){
+                 $("#popupMA").html('Wrong dimensions A - Q.');
+                 $("#popupMQ").html('Wrong dimensions Q - A.');
+                 matrix = false;
+                 popup_name.push('popupMA');
+                 popup_name.push('popupMQ');
+            }
+
+            if ((MR_r != Mu_r) || (MR_s != Mu_r)){
+                 $("#popupMB").html('Wrong dimensions R - u.');
+                 $("#popupMu").html('Wrong dimensions u - R.');
+                 matrix = false;
+                 popup_name.push('popupMB');
+                 popup_name.push('popupMu');
+            }
+
+            /////////////////////////////////////////// EMPTY AND REQUIRED /////////////////////////////////////////////
+            if (Mx == ''){
+                 $("#popupMx").html('Required.');
+                 empty = false;
+                 popup_name.push('popupMx');
+            }
+
+            if (Mu == ''){
+                 $("#popupMu").html('Required.');
+                 empty = false;
+                 popup_name.push('popupMu');
+            }
+
+            if (Mxref == ''){
+                 $("#popupMxref").html('Required.');
+                 empty = false;
+                 popup_name.push('popupMxref');
+            }
+
+            if (Mxzero == ''){
+                 $("#popupMxzero").html('Required.');
+                 empty = false;
+                 popup_name.push('popupMxzero');
+            }
+
+            if (MQ == ''){
+                 $("#popupMQ").html('Required.');
+                 empty = false;
+                 popup_name.push('popupMQ');
+            }
+
+            if (MR == ''){
+                 $("#popupMR").html('Required.');
+                 empty = false;
+                 popup_name.push('popupMR');
+
+            }
+
+            if (Nmin == ''){
+                 $("#popupNmin").html('Required.');
+                 empty = false;
+                 popup_name.push('popupNmin');
+
+            }
+
+            if ((dimensions == false) || (matrix == false) || (empty == false)){
+                popup_name = Array.from(new Set(popup_name))
+                for(i=0;i < popup_name.length;i++){
+                    var popup = document.getElementById(popup_name[i]);
+                    popup.classList.toggle("show");
+                }
+                event.preventDefault();
+            }
+        }
+
+        function myClickFunction(ID) {
+            var popup = document.getElementById(ID);
+            popup.classList.toggle("show");
+        }
+
+        function myHideAll(){
+            var divsToHide = document.getElementsByClassName("popuptext");
+            for(var i = 0; i < divsToHide.length; i++){
+                if(window.getComputedStyle(divsToHide[i]).visibility === "visible"){
+                    divsToHide[i].classList.toggle("show");
+                }
+            }
+        }
+    </script>
+
     <div class="container">
         <div class="row justify-content-center">
             <h1>Model Predictive Control design</h1>
         </div>
-        <form action="/startMPC/{{c_id}} " method="POST">
+        <form name="MPC_form" action="/startMPC/{{c_id}}" onsubmit=" validateForm();" method="POST" >
             <div class="row justify-content-center">
                 <div class="col" style="padding-right:20px; border-right: 1px solid #ccc; padding-top:20px">
                     <p class="text-center"> <b>Model set-up in discrate time</b></p>
                     <div class="row">
                         <div class="col">
                             <div class="radio">
-                              <label><input type="radio" id = "stat_space" name="Model_Repre" value="StateSpace">State space</label>
+                              <label><input onclick="myHideAll()" type="radio" id = "stat_space" name="Model_Repre" value="StateSpace">State space</label>
                             </div>
                             <div class="radio">
-                              <label><input type="radio" id = "dif_equation" name="Model_Repre" value="DiffEquation" checked>Differencial equastions</label>
+                              <label><input onclick="myHideAll()" type="radio" id = "dif_equation" name="Model_Repre" value="DiffEquation" checked>Differencial equastions</label>
                             </div>
                         </div>
                     </div>
@@ -42,7 +301,10 @@
                               <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon1">Math. expression</span>
                               </div>
-                                <textarea type="form-control" class="form-control scroller" placeholder="x1(k+1) = x1(k)+x2(k)*u1(k)+x3(k)*2;&#13;&#10;x2(k+1) = x1(k)*x2(k)+u1(k);&#13;&#10;x3(k+1) = x3(k)+u1(k);&#13;&#10;y(k) = x2(k)" name="DF_equation" rows="4"></textarea>
+                                <textarea onclick="myClickFunction('popupDE')" type="form-control" class="form-control scroller" placeholder="x1(k+1) = x1(k)+x2(k)*u1(k)+x3(k)*2;&#13;&#10;x2(k+1) = x1(k)*x2(k)+u1(k);&#13;&#10;x3(k+1) = x3(k)+u1(k);&#13;&#10;y(k) = x2(k)" name="DF_equation" rows="4"></textarea>
+                                <div class="popup" onclick="myClickFunction('popupDE')">
+                                    <span class="popuptext" id="popupDE"></span>
+                                </div>
                             </div>
                         </div>
 
@@ -54,6 +316,9 @@
                                         <span class="input-group-text" id="basic-addon2">A:</span>
                                       </div>
                                         <input type="text" class="form-control" placeholder="[1,1; 2,2]" name="matrix_A">
+                                        <div class="popup" onclick="myClickFunction('popupMA')">
+                                            <span class="popuptext" id="popupMA"></span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col">
@@ -62,6 +327,9 @@
                                         <span class="input-group-text" id="basic-addon3">B:</span>
                                       </div>
                                         <input type="text" class="form-control" placeholder="[5; 6]" name="matrix_B">
+                                        <div class="popup" onclick="myClickFunction('popupMB')">
+                                            <span class="popuptext" id="popupMB"></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -72,6 +340,9 @@
                                         <span class="input-group-text" id="basic-addon40">C:</span>
                                       </div>
                                         <input type="text" class="form-control" placeholder="[1,1; 2,2]" name="matrix_C">
+                                        <div class="popup" onclick="myClickFunction('popupMC')">
+                                            <span class="popuptext" id="popupMC"></span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col">
@@ -80,6 +351,9 @@
                                         <span class="input-group-text" id="basic-addon50">D:</span>
                                       </div>
                                         <input type="text" class="form-control" placeholder="[5; 6]" name="matrix_D">
+                                        <div class="popup" onclick="myClickFunction('popupMD')">
+                                            <span class="popuptext" id="popupMD"></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -91,6 +365,9 @@
                             <span class="input-group-text" id="basic-addon4">x:</span>
                           </div>
                             <input type="text" class="form-control" placeholder="[x1;x2;x3]" name="matrix_x">
+                            <div class="popup" onclick="myClickFunction('popupMx')">
+                                <span class="popuptext" id="popupMx"></span>
+                            </div>
                         </div>
                     </div>
                     <div class="col w-100" style="top:122px">
@@ -99,6 +376,9 @@
                             <span class="input-group-text" id="basic-addon55">u:</span>
                           </div>
                             <input type="text" class="form-control" placeholder="[u1]" name="matrix_u">
+                            <div class="popup" onclick="myClickFunction('popupMu')">
+                                <span class="popuptext" id="popupMu"></span>
+                            </div>
                         </div>
                     </div>
                     <div class="col w-100" style="top:122px">
@@ -107,6 +387,9 @@
                             <span class="input-group-text" id="basic-addon5">y:</span>
                           </div>
                             <input type="text" class="form-control" placeholder="[y]" name="matrix_y">
+                            <div class="popup" onclick="myClickFunction('popupMy')">
+                                <span class="popuptext" id="popupMy"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -119,6 +402,9 @@
                                 <span class="input-group-text" id="basic-addon7">Nmin</span>
                               </div>
                                 <input type="text" class="form-control" placeholder="5" name="Nmin">
+                                <div class="popup" onclick="myClickFunction('popupNmin')">
+                                    <span class="popuptext" id="popupNmin"></span>
+                                </div>
                             </div>
                         </div>
                         <div class="col">
@@ -135,6 +421,9 @@
                                 <span class="input-group-text" id="basic-addon9">Q</span>
                               </div>
                                 <input type="text" class="form-control" placeholder="[1,0; 0,1]" name="matrix_Q">
+                                <div class="popup" onclick="myClickFunction('popupMQ')">
+                                    <span class="popuptext" id="popupMQ"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -145,6 +434,9 @@
                                 <span class="input-group-text" id="basic-addon10">x_ref</span>
                               </div>
                                 <input type="text" class="form-control" placeholder="[20; 20; 20]" name="x_ref">
+                                <div class="popup" onclick="myClickFunction('popupMxref')">
+                                    <span class="popuptext" id="popupMxref"></span>
+                                </div>
                             </div>
                         </div>
                         <div class="col">
@@ -153,6 +445,9 @@
                                 <span class="input-group-text" id="basic-addon11">x_0</span>
                               </div>
                                 <input type="text" class="form-control" placeholder="[1; 2; 3]" name="x_zero">
+                                <div class="popup" onclick="myClickFunction('popupMxzero')">
+                                    <span class="popuptext" id="popupMxzero"></span>
+                                </div>
                             </div>
                         </div>
                         <div class="col">
@@ -161,6 +456,9 @@
                                 <span class="input-group-text" id="basic-addon12">R</span>
                               </div>
                                 <input type="text" class="form-control" placeholder="[1,0; 0,1]" name="matrix_R">
+                                <div class="popup" onclick="myClickFunction('popupMR')">
+                                    <span class="popuptext" id="popupMR"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -171,6 +469,9 @@
                                 <span class="input-group-text" id="basic-addon13">Inequality C.</span>
                               </div>
                                 <textarea type="form-control" class="form-control scroller" placeholder="-5<=x<=5" name="InCons" rows="4"></textarea>
+                                <div class="popup" onclick="myClickFunction('popupIC')">
+                                    <span class="popuptext" id="popupIC"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -181,6 +482,9 @@
                                 <span class="input-group-text" id="basic-addon14">Equality C.</span>
                               </div>
                                 <textarea type="form-control" class="form-control scroller" placeholder="x1+u1 = 5" name="EqCons" rows="4"></textarea>
+                                <div class="popup"  onclick="myClickFunction('popupEC')">
+                                    <span class="popuptext" id="popupEC"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -199,18 +503,8 @@
                 </div>
 
                 <div class="input-group-append">
-                        <button type="submit" name="button" class="btn btn-primary btn-block" value="Start MPC" onclick="myFunction()">Start</button>
+                        <button type="submit" name="button" class="btn btn-primary btn-block" value="Start MPC">Start</button>
                 </div>
-            <script>
-                function myFunction() {
-                  window.open(index.html);
-                }
-            </script>
         </form>
     </div>
-
 {% endblock %}
-<span class="button-checkbox">
-    <button type="button" class="btn btn-primary active" data-color="primary"><i class="state-icon glyphicon glyphicon-check"></i>&nbsp;Unchecked</button>
-    <input type="checkbox" class="hidden">
-</span>
