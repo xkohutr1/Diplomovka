@@ -10,8 +10,8 @@
         var number_of_optimization = 0;
         var solutions_value = [];
         var iterations = [];
-        var data_x_graph = 0;
-        var data_y_graph = 0;
+        var data_x_graph=0;
+        var data_y_graph=0;
         $(document).ready(function() {
             var socket = io.connect('http://localhost:5000/');
 
@@ -29,13 +29,21 @@
 
                 if (data.hasOwnProperty(client_id)){
                     if (data['x'] != 'ADMM'){
+                        if (data_x_graph == 0){
+                            myChart.data.labels.pop();
+                            myChart.data.datasets.forEach((dataset) => {
+                                dataset.data.pop();
+                            });
+                            myChart.update();
+                        }
                         data_y_graph = data['x'];
-                        data_x_graph = data_x_graph + 1;
                         myChart.data.labels.push(data_x_graph);
                         myChart.data.datasets.forEach((dataset) => {
                             dataset.data.push(data_y_graph);
                         });
                         myChart.update();
+                        data_x_graph = data_x_graph + 1;
+
                     }
 
                     $("#solution_find").empty();
@@ -257,17 +265,6 @@
                         borderWidth: 1
                     }]
                 },
-                options: {
-                    scales: {
-                        yAxes: [{
-                            stacked: true,
-                            ticks: {
-                                suggestedMin: 0,
-                                suggestedMax: 6
-                            }
-                        }]
-                    }
-                }
             });
         </script>
 

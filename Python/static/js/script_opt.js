@@ -3,7 +3,6 @@ function gdmethod(grad_data){
     var epsilon = math.pow(1*10,-10);
     var td = 10;
     var kmax = 10000;
-    //console.log(grad_data)
     /* Parameter for logarithmick barrier method */
     var ni = 0.7;
     var tni = 0.8;

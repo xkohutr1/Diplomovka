@@ -787,48 +787,6 @@ def ADMN_calulate(solution, client_id):
                     except:
                         print('Neulozili sa udaje po optimalizacií')
 
-        #################################### FIND IF ALL WORKERS END OPTIMISATION ##########################################
-        wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
-                          filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
-        Lambda_in_wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
-                                    filter(MPC_Worker_data.Variable.contains('lambda')). \
-                                    filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
-        '''        ################################## PATCH FOR DABASE MAGICK :D ##################################################
-        if wait_for_worker-Lambda_in_wait_for_worker < 0:
-            try:
-                Workers = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
-                    filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).all()
-                Lambdas = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
-                    filter(MPC_Worker_data.Variable.contains('lambda')). \
-                    filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).all()
-                for worker in Workers:
-                    find_and_delet = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
-                        filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID). \
-                        filter(MPC_optimization.Variables == worker.Variables).all()
-                    find_and_delet2 = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
-                        filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID). \
-                        filter(MPC_optimization.Variables == worker.Variables).all()
-                    if len(find_and_delet) > 1:
-                        for i in range(1,len(find_and_delet),1):
-                            Delete = find_and_delet[i]
-                            Delete.delete()
-                            db.session.commit()
-                            Delete = find_and_delet2[i]
-                            Delete.delete()
-                            db.session.commit()
-
-                for Lambda in Lambdas:
-                    find_and_delet = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
-                        filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID). \
-                        filter(MPC_optimization.Variables == Lambda.Variables).all()
-                    if len(find_and_delet) > 1:
-                        for i in range(1,len(find_and_delet),1):
-                            Delete = find_and_delet[i]
-                            Delete.delete()
-                            db.session.commit()
-            except:
-                print('Patch for database magick faild')'''
-
         #################################### FIND IF ALL WORKERS END OPTIMISATION ######################################
         wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
                           filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
@@ -873,18 +831,21 @@ def ADMN_calulate(solution, client_id):
                     W_data = MPC_Worker_Data_Grup(MPC_Workers, MPC_Workers_data, Workers_data_all)
                     data[Worker_id] = W_data.sol
                     for row in MPC_Workers_data:
-                        row.Status = 3
-                        if (row.Variable.find('lambda') != -1):
-                            Lambda = row.Variable
-                            Lambda_value = Workers_data_all[Lambda]
-                            Sym_val_of_lambda = row.Optimal_value
-                            Sym_val_of_lambda = Sym_val_of_lambda.split('+')
-                            Sym_val_of_lambda[0] = Lambda_value
-                            pom = Sym_val_of_lambda[1:len(Sym_val_of_lambda)]
-                            criteria.append('+'.join(pom))
-                            Sym_val_of_lambda = '+'.join(Sym_val_of_lambda)
-                            row.Optimal_value = Sym_val_of_lambda
-                    db.session.commit()
+                        try:
+                            row.Status = 3
+                            if (row.Variable.find('lambda') != -1):
+                                Lambda = row.Variable
+                                Lambda_value = Workers_data_all[Lambda]
+                                Sym_val_of_lambda = row.Optimal_value
+                                Sym_val_of_lambda = Sym_val_of_lambda.split('+')
+                                Sym_val_of_lambda[0] = Lambda_value
+                                pom = Sym_val_of_lambda[1:len(Sym_val_of_lambda)]
+                                criteria.append('+'.join(pom))
+                                Sym_val_of_lambda = '+'.join(Sym_val_of_lambda)
+                                row.Optimal_value = Sym_val_of_lambda
+                            db.session.commit()
+                        except:
+                            return
             if len(criteria) == 0:
                 ################################# THER IS NO NEED TO USE ADMM  NORMAL MPC ##################################
                 print('NORMAL MPC')
@@ -910,8 +871,7 @@ def ADMN_calulate(solution, client_id):
                         data[x0_id] = change_data
                         db.session.commit()
 
-                    keys = [i for i in Workers_data_all.keys()]
-                    data['x'] = Workers_data_all[keys[0]]
+                    data['x'] = value_x0[0]
                     socketio.emit('js_worker', data=data, broadcast=True)
                 else:
                     MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == Optimizatio_ID).first()

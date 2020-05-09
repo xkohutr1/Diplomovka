@@ -239,6 +239,7 @@
                 popup_name = Array.from(new Set(popup_name))
                 for(i=0;i < popup_name.length;i++){
                     var popup = document.getElementById(popup_name[i]);
+                    popup.style.backgroundColor = "rgb(255, 0, 0)";
                     popup.classList.toggle("show");
                 }
                 event.preventDefault();
@@ -257,6 +258,16 @@
                     divsToHide[i].classList.toggle("show");
                 }
             }
+        }
+
+        function myInfoFunction(){
+            $("#popupMx").html('The first state will also be taken as the output in the simulation.');
+            var popup = document.getElementById("popupMx");
+            if(window.getComputedStyle(popup).visibility === "visible"){
+                    popup.classList.toggle("show");
+            }
+            popup.style.backgroundColor = "rgb(0, 255, 0)";
+            popup.classList.toggle("show");
         }
     </script>
 
@@ -301,7 +312,7 @@
                               <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon1">Math. expression</span>
                               </div>
-                                <textarea onclick="myClickFunction('popupDE')" type="form-control" class="form-control scroller" placeholder="x1(k+1) = x1(k)+x2(k)*u1(k)+x3(k)*2;&#13;&#10;x2(k+1) = x1(k)*x2(k)+u1(k);&#13;&#10;x3(k+1) = x3(k)+u1(k);&#13;&#10;y(k) = x2(k)" name="DF_equation" rows="4"></textarea>
+                                <textarea type="form-control" class="form-control scroller" placeholder="x1(k+1) = x1(k)+x2(k)*u1(k)+x3(k)*2;&#13;&#10;x2(k+1) = x1(k)*x2(k)+u1(k);&#13;&#10;x3(k+1) = x3(k)+u1(k);&#13;&#10;y(k) = x2(k)" name="DF_equation" rows="4"></textarea>
                                 <div class="popup" onclick="myClickFunction('popupDE')">
                                     <span class="popuptext" id="popupDE"></span>
                                 </div>
@@ -364,7 +375,7 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text" id="basic-addon4">x:</span>
                           </div>
-                            <input type="text" class="form-control" placeholder="[x1;x2;x3]" name="matrix_x">
+                            <input onclick="myInfoFunction()" type="text" class="form-control" placeholder="[x1;x2;x3]" name="matrix_x">
                             <div class="popup" onclick="myClickFunction('popupMx')">
                                 <span class="popuptext" id="popupMx"></span>
                             </div>
