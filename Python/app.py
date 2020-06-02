@@ -15,6 +15,7 @@ global g_status
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 SQLALCHEMY_BINDS = {'Clients': 'sqlite:///Clients.db',
+                    'Optimization': 'sqlite:///Optimization.db',
                     'Worker': 'sqlite:///Worker.db',
                     'Worker_data': 'sqlite:///Worker_data.db',
                     'MPC_Worker': 'sqlite:///MPC_Worker.db',
@@ -41,6 +42,14 @@ class Clients(db.Model):
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
 
 ################# OPTIMIZATION DATABASES ###################
+class Optimization(db.Model):
+    __bind_key__ = 'Optimization'
+    id = db.Column(db.Integer, primary_key=True)
+    Function = db.Column(db.String(5000), index=True)
+    Variables = db.Column(db.String(64), index=True)
+    Client_id = db.Column(db.Integer, index=True)
+    Status = db.Column(db.Integer, index=True)  # 1 - Optimization in progres, 2 - Optimization is completed
+
 class Worker(db.Model):
     __bind_key__= 'Worker'
     id = db.Column(db.Integer, primary_key=True)
@@ -108,8 +117,9 @@ def index():
                 return render_template('connected.html', client = new_client,  c_id = new_client.id, status = g_status)
             except:
                 return 'There was an issue whit your connection.'
+
         ########################################## CONNECT CLIENT TO MPC WORKBENCH #####################################
-        elif action == "Model Predictiv Control":
+        elif action == "Model Predictive Control":
             new_client = Clients(status='1')
             try:
                 db.session.add(new_client)
@@ -329,7 +339,6 @@ def startMPC(id):
     Nmax = request.form['Nmax']
     x_ref = request.form['x_ref']
     x_zero = request.form['x_zero']
-
     Constants = request.form['Constants']
 
     from function import creat_functions
@@ -447,6 +456,7 @@ def startMPC(id):
     x_zero = web_data_processed(x_zero)
     x_zero = x_zero.sol
     len_of_x = len(x_zero)
+    Whole_Funk = '+'.join(Funkcion)
     ######################################### Upload data to database of workers #######################################
     for i in range(len(sequence)):
         k = sequence[i]  # ktore ostalo ako posledne dosadene
@@ -454,8 +464,6 @@ def startMPC(id):
 
         if k != 0:
             x_zero = [] # mame nastrel len pre x0
-
-        Whole_Funk = '+'.join(Funkcion)
 
         Derive_funk = derive(Whole_Funk, Variables, k, d, len_of_x)
         Grad = Derive_funk.sol
@@ -471,7 +479,6 @@ def startMPC(id):
         for ii in range(len(Opti_variables)):
             if (ii > 0):
                 Sep_fun = '0'
-
             Gradient = str(Grad[ii])
             Optimization_Variables = Opti_variables[ii]
             new_worker = MPC_Worker(Gradient=Gradient, Optimization_Variables=Optimization_Variables,
@@ -519,8 +526,6 @@ def joinMPC(id, Optimization_id):
     while wait_for_worker < 0:
         wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
                           filter(MPC_Worker_data.MPC_optimization_id == Optimization_id).count()
-
-
 
     ######################################### FIND MPC WHICH WE WANT OPTIMIZE ##########################################
     MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == Optimization_id).first()
@@ -585,7 +590,7 @@ def joinMPC(id, Optimization_id):
 
             if (k != 0):
                 ########################################## ADMM DECENTRALISATION #######################################
-                fun_decent = decentralization(General_Model, Variables, k)
+                fun_decent = decentralization(General_Model, Variables, k, sequence[-1])
                 ############################################### LAMBDA #################################################
                 pom_lambda = fun_decent.Lambda
                 Lambda_var.append(pom_lambda)
@@ -609,7 +614,7 @@ def joinMPC(id, Optimization_id):
             sub_fun = substitut(sub_fun, General_Model, Variables, kk, '')
             sub_fun = sub_fun.sol
             fun_pom.append('(' + sub_fun + ')')
-            fun_decent = decentralization(General_Model, Variables, kk)
+            fun_decent = decentralization(General_Model, Variables, kk, sequence[-1])
             pom_lambda = fun_decent.Lambda
             Lambda_var.append(pom_lambda)
             pom_lambda_fun = fun_decent.Eval_lambda
@@ -619,22 +624,26 @@ def joinMPC(id, Optimization_id):
             fun_pom.append('(' + fun_decent + ')')
 
             sequence.append(kk)
+            Distribut_N[i] = 1
             Funkcion.append('+'.join(fun_pom))
             kk = kk + 1
 
     len_of_x = len(x_referenc)
+    Whole_Funk = '+'.join(Funkcion)
+    for i in range(sum(Distribut_N)):
+        for ii in range(len(Variables)):
+            Whole_Funk = Whole_Funk.replace(Variables[ii] + '_' + str(i), Variables[ii] + '_' + str(i)+'s')
     ######################################### Upload data to database of workers #######################################
     for i in range(len(sequence)):
         k = sequence[i]  # ktore ostalo ako posledne dosadene
         d = Distribut_N[i]  # toto je pocet pred. horizontov na funkciu
 
-        Whole_Funk = '+'.join(Funkcion)
-
         Derive_funk = derive(Whole_Funk, Variables, k, d, len_of_x)
         Grad = Derive_funk.sol
         Opti_variables = Derive_funk.opt_vars
 
-        Sep_fun = Funkcion[i]
+        #Sep_fun = Funkcion[i]
+        Sep_fun = Derive_funk.sep_fun
         Client_id = MPC_Clients[i].id
         for ii in range(len(Opti_variables)):
             if (ii > 0):
@@ -689,20 +698,34 @@ def joinMPC(id, Optimization_id):
 ################################################# REFERENCE CHANGE FUNCTION ############################################
 @socketio.on('change_reference')
 def change_reference(x_referenc, c_id, status):
-    if x_referenc != '':
-        MPC_ID = db.session.query(MPC_Worker).filter(MPC_Worker.Client_id == c_id).first()
-        MPC_ID = MPC_ID.MPC_optimization_id
-        MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == MPC_ID).first()
-        MPC.x_referenc = x_referenc
-        db.session.commit()
-        msg = 'Reference changed!'
-    else:
-        MPC_ID = db.session.query(MPC_Worker).filter(MPC_Worker.Client_id == c_id).first()
-        MPC_ID = MPC_ID.MPC_optimization_id
-        MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == MPC_ID).first()
-        MPC.Status = status
-        db.session.commit()
-        msg = 'The simulation has been stopped'
+    #################################### CALLCULTION IN PROGES WIAT !!!!!!!!! ##########################################
+    Optimization_id = db.session.query(Clients).filter(Clients.id == c_id).first()
+    Optimization_id = Optimization_id.MPC_optimization
+
+    wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+        filter(MPC_Worker_data.MPC_optimization_id == Optimization_id).count()
+    workers = db.session.query(MPC_Worker_data). \
+        filter(MPC_Worker_data.MPC_optimization_id == Optimization_id).count()
+    while (wait_for_worker == workers):
+        wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+            filter(MPC_Worker_data.MPC_optimization_id == Optimization_id).count()
+    try:
+        if x_referenc != '':
+            MPC_ID = db.session.query(MPC_Worker).filter(MPC_Worker.Client_id == c_id).first()
+            MPC_ID = MPC_ID.MPC_optimization_id
+            MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == MPC_ID).first()
+            MPC.x_referenc = x_referenc
+            db.session.commit()
+            msg = 'Reference changed!'
+        else:
+            MPC_ID = db.session.query(MPC_Worker).filter(MPC_Worker.Client_id == c_id).first()
+            MPC_ID = MPC_ID.MPC_optimization_id
+            MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == MPC_ID).first()
+            MPC.Status = status
+            db.session.commit()
+            msg = 'The simulation has been stopped'
+    except:
+        msg = 'Action failed'
     socketio.emit('reference_changed',msg)
 
 ########################################### WEBSOCKET FOR MPC OPTIMIZATION #############################################
@@ -722,11 +745,11 @@ def mpc_connect_websocetio(masseg, id, opt_id):
 
     Workers_data_all = MPC_Worker_data.query.filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).all()
     Workers_data_all = MPC_Worker_Varialbe_value(Workers_data_all, MPC)
+    reference = Workers_data_all.reference
     Workers_data_all = Workers_data_all.sol
 
     used_ID = []
     data = {}
-
     for i in range(len(Number_of_MPC_Workers)):
         Worker_id = Number_of_MPC_Workers[i].Client_id
         if ((Worker_id in used_ID) == False):
@@ -740,18 +763,30 @@ def mpc_connect_websocetio(masseg, id, opt_id):
 
             W_data = MPC_Worker_Data_Grup(MPC_Workers, MPC_Workers_data, Workers_data_all)
             data[Worker_id] = W_data.sol
-
             for row in MPC_Workers_data:
                 row.Status = 3
             db.session.commit()
+    data['ref'] = reference
     keys = [i for i in Workers_data_all.keys()]
-    data['x'] = Workers_data_all[keys[0]]
+    pom_i = 0
+    data_x = []
+    data_u = []
+    for i in range(len(keys)):
+        key = keys[i].split('_')
+        if key[-1] == '0s':
+            if pom_i < len(reference):
+                data_x.append(Workers_data_all[keys[i]])
+            else:
+                data_u.append(Workers_data_all[keys[i]])
+            pom_i = pom_i +1
+    data['x'] = data_x
+    data['u'] = data_u
     socketio.emit('js_worker', data=data, broadcast=True)
 
 @socketio.on('ADMN_calulate')
 def ADMN_calulate(solution, client_id):
     ###################################################### ADMM ########################################################
-    epsilon = 0.01  # Stop criteria for ADMM
+    epsilon = 0.0005  # Stop criteria for ADMM
     opt_sol = solution[0]
     variable = solution[1]
     iteration = solution[2]
@@ -775,10 +810,30 @@ def ADMN_calulate(solution, client_id):
     if stop_someone_is_in_join == True:
         print('Stop someone is waiting')
     elif stop_someone_is_in_join == False:
+        ############################################# FIND OLD VALUE ###################################################
+        from function import Find_previous_input
+        MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == Optimizatio_ID).first()
+        old_input_variable = Find_previous_input(MPC)
+        old_input_variable = old_input_variable.sol
         ############################################# UPDATE DATABAS AFTER OPTIMIZATION ################################
+        all_workers = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
+        wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+            filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
+        if all_workers == wait_for_worker:
+            you_will_wait = True
+        else:
+            you_will_wait = False
+
         for i in range(len(MPC_Workers_data)):
             for ii in range(len(variable)):
                 if MPC_Workers_data[i].Variable == variable[ii]:
+                    if variable[ii] in old_input_variable:
+                        new_worker_data = MPC_Worker_data(Variable=variable[ii]+'old',
+                                                          Optimal_value=MPC_Workers_data[i].Optimal_value,
+                                                          Iteration=0, Client_id=client_id, Status=2,
+                                                          MPC_optimization_id=Optimizatio_ID)
+                        db.session.add(new_worker_data)
+                        db.session.commit()
                     try:
                         MPC_Workers_data[i].Optimal_value = opt_sol[ii]
                         MPC_Workers_data[i].Iteration = iteration
@@ -789,17 +844,25 @@ def ADMN_calulate(solution, client_id):
 
         #################################### FIND IF ALL WORKERS END OPTIMISATION ######################################
         wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
-                          filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
+                            filter(~MPC_Worker_data.Variable.contains('old')). \
+                            filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
         Lambda_in_wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
                                     filter(MPC_Worker_data.Variable.contains('lambda')). \
                                     filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
-
+        if you_will_wait == True:
+            while wait_for_worker - Lambda_in_wait_for_worker != 0:
+                wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+                    filter(~MPC_Worker_data.Variable.contains('old')). \
+                    filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
+                Lambda_in_wait_for_worker = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Status == 3). \
+                    filter(MPC_Worker_data.Variable.contains('lambda')). \
+                    filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).count()
         ############################################# AFTER ALL WORKERS ARE DONE #######################################
-        if wait_for_worker-Lambda_in_wait_for_worker == 0:
+        if wait_for_worker-Lambda_in_wait_for_worker == 0 and you_will_wait == True:
 
             print('All worker complet optimization')
-            ######################################## WORK WHIT NEW DATA SET ################################################
-            from function import MPC_Worker_Data_Grup, MPC_Worker_Varialbe_value, Calculate_criteria, Simulation
+            ######################################## WORK WHIT NEW DATA SET ############################################
+            from function import MPC_Worker_Data_Grup, MPC_Worker_Varialbe_value, Calculate_criteria, Calculate_input_criteria, Simulation
             try:
                 MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == Optimizatio_ID).first()
 
@@ -808,15 +871,19 @@ def ADMN_calulate(solution, client_id):
 
                 Workers_data_all = MPC_Worker_data.query.filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).all()
                 Workers_data_all = MPC_Worker_Varialbe_value(Workers_data_all, MPC)
+                reference = Workers_data_all.reference
                 Workers_data_all = Workers_data_all.sol
             except:
-                print('Error during MPCjoin')
+                print('Ending calculations')
 
             used_ID = []
             data = {}
             criteria = []
             for i in range(len(Number_of_MPC_Workers)):
-                Worker_id = Number_of_MPC_Workers[i].Client_id
+                try:
+                    Worker_id = Number_of_MPC_Workers[i].Client_id
+                except:
+                    return
                 if ((Worker_id in used_ID) == False):
                     used_ID.append(Worker_id)
                     try:
@@ -827,8 +894,11 @@ def ADMN_calulate(solution, client_id):
                             filter(MPC_Worker_data.Client_id.like(Worker_id)).all()
                     except:
                         print('Cant find Optimizatio_ID')
-                    ################################# PREPARATION OF DATA FOR OPTIMIZATION #################################
-                    W_data = MPC_Worker_Data_Grup(MPC_Workers, MPC_Workers_data, Workers_data_all)
+                    ################################# PREPARATION OF DATA FOR OPTIMIZATION #############################
+                    try:
+                        W_data = MPC_Worker_Data_Grup(MPC_Workers, MPC_Workers_data, Workers_data_all)
+                    except:
+                        return
                     data[Worker_id] = W_data.sol
                     for row in MPC_Workers_data:
                         try:
@@ -847,31 +917,36 @@ def ADMN_calulate(solution, client_id):
                         except:
                             return
             if len(criteria) == 0:
-                ################################# THER IS NO NEED TO USE ADMM  NORMAL MPC ##################################
+                ################################# THER IS NO NEED TO USE ADMM  NORMAL MPC ##############################
                 print('NORMAL MPC')
-                ####################### IN THIS POINT WE CAN DO WHATEVER WE WANT WHIT FOUND SOLUTION #######################
+                ####################### IN THIS POINT WE CAN DO WHATEVER WE WANT WHIT FOUND SOLUTION ###################
                 # Workers_data_all <---- 'we can find optimal solution in this dictionary'
                 # keys = [i for i in All_workers_data.keys()] <---- optimize variables
                 # Workers_data_all[keys] <---- optimal values
-                ################################# USE OF MPC OUTPUT IN SIMULATION ##########################################
+                ################################# USE OF MPC OUTPUT IN SIMULATION ######################################
                 new_x0 = Simulation(Workers_data_all,MPC)
                 value_x0 = new_x0.sol
                 variable_x0 = new_x0.variable
+                input_u = new_x0.input
                 norm_x0 = new_x0.norm
                 if MPC.Status != 2:
                     for i in range(len(value_x0)):
-                        MPC_Workers_data = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Variable == variable_x0[i]). \
-                                           filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).first()
-                        MPC_Workers_data.Optimal_value = value_x0[i]
-                        x0_id = MPC_Workers_data.Client_id
-                        change_data = data[x0_id].copy()
-                        for ii in range(len(change_data)):
-                            if change_data[ii][1] == variable_x0[i]:
-                                change_data[ii][2] = value_x0[i]
-                        data[x0_id] = change_data
-                        db.session.commit()
-
-                    data['x'] = value_x0[0]
+                        try:
+                            MPC_Workers_data = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Variable == variable_x0[i]). \
+                                               filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).first()
+                            MPC_Workers_data.Optimal_value = value_x0[i]
+                            x0_id = MPC_Workers_data.Client_id
+                            change_data = data[x0_id].copy()
+                            for ii in range(len(change_data)):
+                                if change_data[ii][1] == variable_x0[i]:
+                                    change_data[ii][2] = value_x0[i]
+                            data[x0_id] = change_data
+                            db.session.commit()
+                        except:
+                            print('Change of database')
+                    data['x'] = value_x0
+                    data['u'] = input_u
+                    data['ref'] = reference
                     socketio.emit('js_worker', data=data, broadcast=True)
                 else:
                     MPC = db.session.query(MPC_optimization).filter(MPC_optimization.id == Optimizatio_ID).first()
@@ -886,40 +961,61 @@ def ADMN_calulate(solution, client_id):
                     except:
                         print('Delet of database faild')
             else:
-                ########################################### ADMM CALCULATION ###############################################
+                ########################################### ADMM CALCULATION ###########################################
                 criteria = '+'.join(criteria)
                 criteria = Calculate_criteria(criteria,Workers_data_all)
                 criteria = criteria.sol
-                if criteria > epsilon:
+
+                ###
+                old_input_value = {}
+                ALL_MPC_Workers_data = db.session.query(MPC_Worker_data).filter(
+                    MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).\
+                    filter(MPC_Worker_data.Variable.contains('old')).all()
+                for i in range(len(ALL_MPC_Workers_data)):
+                    old_var = ALL_MPC_Workers_data[i].Variable
+                    old_var = old_var.split('old')
+                    if old_var[0] in old_input_variable:
+                        old_input_value[old_var[0]] = ALL_MPC_Workers_data[i].Optimal_value
+                    db.session.delete(ALL_MPC_Workers_data[i])
+                    db.session.commit()
+                ###
+                input_criteria = Calculate_input_criteria(old_input_value,Workers_data_all)
+                input_criteria = input_criteria.sol
+                if criteria > epsilon and input_criteria > epsilon:
                     data['x'] = 'ADMM'
-                    #################################### ADMM NEED MORE ITERATIONS #########################################
+                    #################################### ADMM NEED MORE ITERATIONS #####################################
                     socketio.emit('js_worker', data=data, broadcast=True)
                 else:
-                    ############################################ ADMM IS DONE ##############################################
+                    ############################################ ADMM IS DONE ##########################################
                     print('ADMM DONE')
-                    ####################### IN THIS POINT WE CAN DO WHATEVER WE WANT WHIT FOUND SOLUTION #######################
+                    ####################### IN THIS POINT WE CAN DO WHATEVER WE WANT WHIT FOUND SOLUTION ###############
                     # Workers_data_all <---- 'we can find optimal solution in this dictionary'
                     # keys = [i for i in All_workers_data.keys()] <---- optimize variables
                     # Workers_data_all[keys] <---- optimal values
-                    ################################# USE OF MPC OUTPUT IN SIMULATION ##########################################
+                    ################################# USE OF MPC OUTPUT IN SIMULATION ##################################
                     new_x0 = Simulation(Workers_data_all,MPC)
                     value_x0 = new_x0.sol
                     variable_x0 = new_x0.variable
+                    input_u = new_x0.input
                     norm_x0 = new_x0.norm
                     if MPC.Status != 2:
                         for i in range(len(value_x0)):
-                            MPC_Workers_data = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Variable == variable_x0[i]). \
-                                               filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).first()
-                            MPC_Workers_data.Optimal_value = value_x0[i]
-                            x0_id = MPC_Workers_data.Client_id
-                            change_data = data[x0_id].copy()
-                            for ii in range(len(change_data)):
-                                if change_data[ii][1] == variable_x0[i]:
-                                    change_data[ii][2] = value_x0[i]
-                            data[x0_id] = change_data
-                            db.session.commit()
-
-                        data['x'] = value_x0[0]
+                            try:
+                                MPC_Workers_data = db.session.query(MPC_Worker_data).filter(MPC_Worker_data.Variable == variable_x0[i]). \
+                                                   filter(MPC_Worker_data.MPC_optimization_id == Optimizatio_ID).first()
+                                MPC_Workers_data.Optimal_value = value_x0[i]
+                                x0_id = MPC_Workers_data.Client_id
+                                change_data = data[x0_id].copy()
+                                for ii in range(len(change_data)):
+                                    if change_data[ii][1] == variable_x0[i]:
+                                        change_data[ii][2] = value_x0[i]
+                                data[x0_id] = change_data
+                                db.session.commit()
+                            except:
+                                print('change of database')
+                        data['x'] = value_x0
+                        data['u'] = input_u
+                        data['ref'] = reference
                         socketio.emit('js_worker', data=data, broadcast=True)
                     else:
                         print('MPC bring system to referenc')
@@ -931,7 +1027,7 @@ def ADMN_calulate(solution, client_id):
                         except:
                             print('Delet of database faild')
         else:
-            #################################### WAIT FOR ALL WORKERS TO END OPTIMIZATION ##################################
+            #################################### WAIT FOR ALL WORKERS TO END OPTIMIZATION ##############################
             print('WAIT FOR - %d WORKERS TO END OPTIMIZATION' % (wait_for_worker - Lambda_in_wait_for_worker))
 
 

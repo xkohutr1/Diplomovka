@@ -1,7 +1,7 @@
 function gdmethod(grad_data){
     /* Pomocne premenne */
     var epsilon = math.pow(1*10,-10);
-    var td = 10;
+    var td = 20;
     var kmax = 10000;
     /* Parameter for logarithmick barrier method */
     var ni = 0.7;
@@ -36,7 +36,7 @@ function gdmethod(grad_data){
         x0.push(parseFloat(grad_data[i][2]));
         if (String(grad_data[0][3]).includes('tni') == true){
             var pom_epsilon_ni = 1;
-            var epsilon_ni = 0.00001
+            var epsilon_ni = 0.001
             var isset_tni = true
         }else{
             var pom_epsilon_ni = 0;
@@ -48,27 +48,48 @@ function gdmethod(grad_data){
         variable.unshift('tni');
         x0.unshift(tni);
     }
-
+    var use_grad = '';
     var x_v = x0;
     var eval_grad = [];
     var eval_funk = [];
+    var hessian = [];
     var item_grad = [];
     var item_funk = [];
+    var pom_hess2_0 = 0;
     for (ii = 0; ii < grad.length; ii++){
         var pom_grad = String(grad[ii]);
         var pom_funk = String(funk[ii]);
         var item_g = {};
         var item_f = {};
+        var pom_hess = [];
         for (i = 0; i < variable.length; i++){
             var pom_var = String(variable[i]);
+            ///////////////////////////////////////// HESSIAN AND GRADIENT /////////////////////////////////////////////
             if (String(pom_grad).includes(pom_var) == true){
                 pom_x_v = parseFloat(x_v[i]);
                 item_g[pom_var] = pom_x_v;
+
+                if(pom_var.includes('grad') == true){
+                    use_grad = 'Use only gradient';
+                }else{
+                    var pom_hess2 = math.derivative(pom_grad,pom_var);
+                    pom_hess2 = pom_hess2.toString();
+                    pom_hess.push(pom_hess2);
+                }
+            }else{
+                pom_hess.push(0);
             }
+            //////////////////////////////////////////////// FUNCTION //////////////////////////////////////////////////
             if (String(pom_funk).includes(pom_var) == true){
                 pom_x_v = parseFloat(x_v[i]);
                 item_f[pom_var] = pom_x_v;
             }
+        }
+
+        if (pom_grad != '0'){
+            hessian.push(pom_hess);
+        }else{
+            pom_hess2_0 = pom_hess2_0 + 1;
         }
 
         item_grad.push(item_g);
@@ -82,14 +103,47 @@ function gdmethod(grad_data){
     ///////////// Pre Backtracking a Kriterium zastavenia ///////////////
     var ones = Array(eval_funk.length).fill(1);
     var FUNK = math.multiply(ones,eval_funk);
-    var FUNK_stare = FUNK+100;
+    var FUNK_stare = -FUNK;
     var k = 0;
-
+    if (use_grad != ''){
+        hessian = use_grad;
+    }
     while ((math.norm(FUNK_stare - FUNK,2) > epsilon) && (pom_epsilon_ni*x_v[0] >= epsilon_ni)){
 
         k++;
-        ////////////////////// KROK O KTORY SA MAME POSUNUT ///////////////////
-        da = math.dotMultiply(-1,eval_grad);
+        if (hessian != 'Use only gradient'){
+            ///////////////////////////////// HESSIAN //////////////////////////////
+            var eval_hess = [];
+            for (i=0;i < hessian.length;i++){
+                pom_hess = hessian[i].slice(pom_hess2_0);
+                var pom_hess2 = [];
+                for (ii=0;ii < pom_hess.length;ii++){
+                    var item_h = {};
+                    for (iii = 0; iii < variable.length; iii++){
+                        pom_var = String(variable[iii]);
+                        if (String(pom_hess[ii]).includes(pom_var) == true){
+                            pom_x_v = parseFloat(x_v[iii]);
+                            item_h[pom_var] = pom_x_v;
+                        }
+                    }
+                    if (Object.keys(item_h).length > 0){
+                        pom_hess2.push(math.evaluate(pom_hess[ii],item_h));
+                    }else{
+                        pom_hess2.push(math.evaluate(pom_hess[ii]));
+                    }
+                }
+                eval_hess.push(pom_hess2.flat());
+            }
+            ////////////////////// KROK O KTORY SA MAME POSUNUT ///////////////////
+            var inv_eval_hess = math.inv(eval_hess);
+            inv_eval_hess = math.dotMultiply(-1,inv_eval_hess);
+            da = math.multiply(inv_eval_hess,eval_grad.slice(pom_hess2_0));
+            for(i=0;i < pom_hess2_0;i++){
+                da.unshift(0);
+            }
+        }else{
+            da = math.dotMultiply(-1,eval_grad);
+        }
 
         //////////////////////// Backtracking /////////////////////
         var GRAD_DA = math.multiply(math.transpose(eval_grad),da);
@@ -188,7 +242,9 @@ function gdmethod(grad_data){
             break;
         }
     }
-
+    for(i=0;i < x_v.length;i++){
+        x_v[i] = x_v[i].toFixed(5);
+    }
     if (isset_tni == true){
         solution = [x_v.slice(1, x_v.length),variable.slice(1, variable.length),k]
     }else {

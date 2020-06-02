@@ -12,6 +12,7 @@
         var iterations = [];
         var data_x_graph=0;
         var data_y_graph=0;
+        var dimension_y = [];
         $(document).ready(function() {
             var socket = io.connect('http://localhost:5000/');
 
@@ -29,22 +30,80 @@
 
                 if (data.hasOwnProperty(client_id)){
                     if (data['x'] != 'ADMM'){
+                    //////////////////////////////////////////// Plot of states ////////////////////////////////////////
+                        data_y_graph = [data['x'], data['ref']].flat();
+                        dimension_y = data['x'].length;
                         if (data_x_graph == 0){
-                            myChart.data.labels.pop();
-                            myChart.data.datasets.forEach((dataset) => {
-                                dataset.data.pop();
-                            });
-                            myChart.update();
+                            Chart_states.data.labels.pop();
+                            Chart_states.update();
+                            for(i=0;i < data_y_graph.length;i++){
+                                function getRandomRgb() {
+                                    var r = Math.floor(Math.random()*256);
+                                    var g = Math.floor(Math.random()*256);
+                                    var b = Math.floor(Math.random()*256);
+                                    return 'rgb(' + r + ', ' + g + ', ' + b + ')';
+                                }
+                                if (i < data['x'].length){
+                                    var_name = 'x_'+String(i)
+                                }else{
+                                    var_name = 'x_ref_'+String(i-data['x'].length)
+                                }
+                                var new_dataset = {
+                                    label: [var_name],
+                                    data: [],
+                                    steppedLine: true,
+                                    borderColor: [getRandomRgb()],
+                                    backgroundColor: "transparent",
+                                    borderWidth: 1
+                                }
+                                Chart_states.data.datasets.push(new_dataset);
+                                Chart_states.update();
+                            }
                         }
-                        data_y_graph = data['x'];
-                        myChart.data.labels.push(data_x_graph);
-                        myChart.data.datasets.forEach((dataset) => {
-                            dataset.data.push(data_y_graph);
-                        });
-                        myChart.update();
-                        data_x_graph = data_x_graph + 1;
 
+                        Chart_states.data.labels.push(data_x_graph);
+                        for(i=0;i < data_y_graph.length;i++){
+                            Chart_states.data.datasets[i].data.push(data_y_graph[i]);
+                        }
+
+
+                        Chart_states.update();
+                    /////////////////////////////////// Plot of inputs /////////////////////////////////////////////////
+                        data_y_graph = [data['u']].flat();
+                        if (data_x_graph == 0){
+                            Chart_inputs.data.labels.pop();
+                            Chart_inputs.update();
+                            for(i=0;i < data_y_graph.length;i++){
+                                function getRandomRgb() {
+                                    var r = Math.floor(Math.random()*256);
+                                    var g = Math.floor(Math.random()*256);
+                                    var b = Math.floor(Math.random()*256);
+                                    return 'rgb(' + r + ', ' + g + ', ' + b + ')';
+                                }
+                                var new_dataset = {
+                                    label: ['u'+String(i)],
+                                    data: [],
+                                    steppedLine: true,
+                                    borderColor: [getRandomRgb()],
+                                    backgroundColor: "transparent",
+                                    borderWidth: 1
+                                }
+                                Chart_inputs.data.datasets.push(new_dataset);
+                                Chart_inputs.update();
+                            }
+                        }
+                        Chart_inputs.data.labels.push(data_x_graph);
+                        if (data_y_graph.length > 1){
+                            for(i=0;i < data_y_graph.length;i++){
+                                Chart_inputs.data.datasets[i].data.push(data_y_graph[i]);
+                            }
+                        }else{
+                            Chart_inputs.data.datasets[0].data.push(data_y_graph[0]);
+                        }
+                        Chart_inputs.update();
+                        data_x_graph = data_x_graph + 1;
                     }
+                    /////////////////////////////////////////// END OF PLOTS ///////////////////////////////////////////
 
                     $("#solution_find").empty();
 
@@ -185,8 +244,17 @@
             $(".alert-success").hide();
             $("#reference_button").unbind("click").on('click', function(){
                 var clickBtnValue = $("#x_ref").val();
-                if(clickBtnValue.length > 0){
+                var correct_dim = dimension_y;
+                var client_ref = clickBtnValue.split(';');
+                if(client_ref.length == correct_dim){
                     socket.emit('change_reference', clickBtnValue, client_id,'');
+                }else{
+                    $("#popupx_ref").html('Wrong dimensions, must be: '+correct_dim+'x1');
+                    var popup = document.getElementById('popupx_ref');
+                    if(window.getComputedStyle(popup).visibility === "visible"){
+                        popup.classList.toggle("show");
+                    }
+                    popup.classList.toggle("show");
                 }
             });
             $("#stop_button").unbind("click").on('click', function(){
@@ -198,6 +266,10 @@
                 $(".alert-success").slideUp(500);});
             });
         });
+        function myClickFunction() {
+            var popup = document.getElementById('popupx_ref');
+            popup.classList.toggle("show");
+        }
 </script>
 
 <div class="container">
@@ -212,6 +284,9 @@
                 </div>
                 <div class="custom-input">
                     <input type="text" class="form-control" placeholder="New Reference" id="x_ref" name="x_ref">
+                </div>
+                <div class="popup" onclick="myClickFunction()">
+                    <span class="popuptext" id="popupx_ref"></span>
                 </div>
                 <div class="input-group-append">
                     <button type="submit" id="reference_button" class="btn btn-dark">Send</button>
@@ -244,27 +319,45 @@
             <button type="button" class="btn btn-dark" id="next" value=""></button>
             <button type="button" class="btn btn-dark" id="last" value=""></button>
           </div>
-      </div>
-      <div class="col-sm-8" id="add_graph">
-          <div class="chart-container">
-            <canvas id="myChart" width="200" height="100"></canvas>
-          </div>
+        </div>
+        <div class="col-sm-8" id="add_graph">
+            <div class="chart-container">
+                <canvas id="Chart_states" width="200" height="100"></canvas>
+            </div>
 
+            <div class="chart-container">
+                <canvas id="Chart_inputs" width="200" height="100"></canvas>
+            </div>
+        </div>
         <script>
-            var ctx = document.getElementById('myChart').getContext('2d');
-            var myChart = new Chart(ctx, {
+            var ctx = document.getElementById('Chart_states').getContext('2d');
+            var Chart_states = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: [data_x_graph],
-                    datasets: [{
-                        label: 'x1',
-                        data: [data_y_graph],
-                        steppedLine: true,
-                        borderColor: ['rgba(0,0,255,1)'],
-                        backgroundColor: "transparent",
-                        borderWidth: 1
-                    }]
+                    datasets: []
                 },
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Graph of State Development:'
+                    }
+                }
+            });
+
+            var ctx = document.getElementById('Chart_inputs').getContext('2d');
+            var Chart_inputs = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [data_x_graph],
+                    datasets: []
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Graph of Control Performance:'
+                    }
+                }
             });
         </script>
 

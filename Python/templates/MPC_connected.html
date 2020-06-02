@@ -121,7 +121,7 @@
 
                 ////////////////////////////////////// MATRIX ROWS == MATRIX ROWS //////////////////////////////////////
                 if (DE_r != Mx_r){
-                     $("#popupDE").html('Wrong dimensions: Do not forgot add ";" after end of equation.');
+                     $("#popupDE").html('Wrong dimensions: Do not forgot add ";" after end of equation, except the last one.');
                      $("#popupMx").html('Wrong dimensions.');
                      matrix = false;
                      popup_name.push('popupDE');
@@ -183,10 +183,10 @@
             }
 
             if ((MR_r != Mu_r) || (MR_s != Mu_r)){
-                 $("#popupMB").html('Wrong dimensions R - u.');
+                 $("#popupMR").html('Wrong dimensions R - u.');
                  $("#popupMu").html('Wrong dimensions u - R.');
                  matrix = false;
-                 popup_name.push('popupMB');
+                 popup_name.push('popupMR');
                  popup_name.push('popupMu');
             }
 
@@ -282,10 +282,10 @@
                     <div class="row">
                         <div class="col">
                             <div class="radio">
-                              <label><input onclick="myHideAll()" type="radio" id = "stat_space" name="Model_Repre" value="StateSpace">State space</label>
+                              <label><input onclick="myHideAll()" type="radio" id = "stat_space" name="Model_Repre" value="StateSpace" checked>State space</label>
                             </div>
                             <div class="radio">
-                              <label><input onclick="myHideAll()" type="radio" id = "dif_equation" name="Model_Repre" value="DiffEquation" checked>Differencial equastions</label>
+                              <label><input onclick="myHideAll()" type="radio" id = "dif_equation" name="Model_Repre" value="DiffEquation">Differencial equastions</label>
                             </div>
                         </div>
                     </div>
@@ -307,26 +307,27 @@
 
                     <div class="col">
 
-                        <div class="visible w-100" id="DE_div" style="z-index: 1; position: absolute; top: 0px; left: 0px;">
+                        <div class="invisible w-100" id="DE_div" style="z-index: 1; position: absolute; top: 0px; left: 0px;">
                             <div class="input-group mb-3">
                               <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon1">Math. expression</span>
                               </div>
-                                <textarea type="form-control" class="form-control scroller" placeholder="x1(k+1) = x1(k)+x2(k)*u1(k)+x3(k)*2;&#13;&#10;x2(k+1) = x1(k)*x2(k)+u1(k);&#13;&#10;x3(k+1) = x3(k)+u1(k);&#13;&#10;y(k) = x2(k)" name="DF_equation" rows="4"></textarea>
+                                <textarea type="form-control" class="form-control scroller" placeholder="x1(k+1) = x1(k)+x2(k)+u1(k);&#13;&#10;x2(k+1) = x2(k)+0.5*u1(k)" name="DF_equation" rows="4">x1(k+1) = x1(k)+x2(k)+u1(k);
+x2(k+1) = x2(k)+0.5*u1(k)</textarea>
                                 <div class="popup" onclick="myClickFunction('popupDE')">
                                     <span class="popuptext" id="popupDE"></span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="invisible" id="SS_div" style="z-index: 1; position: absolute; top: 0px; left: 0px;">
+                        <div class="visible w-100" id="SS_div" style="z-index: 1; position: absolute; top: 0px; left: 0px;">
                             <div class="row">
                                 <div class="col">
                                     <div class="input-group mb-3">
                                       <div class="input-group-prepend">
                                         <span class="input-group-text" id="basic-addon2">A:</span>
                                       </div>
-                                        <input type="text" class="form-control" placeholder="[1,1; 2,2]" name="matrix_A">
+                                        <input type="text" class="form-control" placeholder="[1,1; 0,1]" name="matrix_A" value="[1,1; 0,1]">
                                         <div class="popup" onclick="myClickFunction('popupMA')">
                                             <span class="popuptext" id="popupMA"></span>
                                         </div>
@@ -337,7 +338,7 @@
                                       <div class="input-group-prepend">
                                         <span class="input-group-text" id="basic-addon3">B:</span>
                                       </div>
-                                        <input type="text" class="form-control" placeholder="[5; 6]" name="matrix_B">
+                                        <input type="text" class="form-control" placeholder="[1; 0.5]" name="matrix_B" value="[1; 0.5]">
                                         <div class="popup" onclick="myClickFunction('popupMB')">
                                             <span class="popuptext" id="popupMB"></span>
                                         </div>
@@ -350,7 +351,7 @@
                                       <div class="input-group-prepend">
                                         <span class="input-group-text" id="basic-addon40">C:</span>
                                       </div>
-                                        <input type="text" class="form-control" placeholder="[1,1; 2,2]" name="matrix_C">
+                                        <input type="text" class="form-control" placeholder="[1,0]" name="matrix_C">
                                         <div class="popup" onclick="myClickFunction('popupMC')">
                                             <span class="popuptext" id="popupMC"></span>
                                         </div>
@@ -361,7 +362,7 @@
                                       <div class="input-group-prepend">
                                         <span class="input-group-text" id="basic-addon50">D:</span>
                                       </div>
-                                        <input type="text" class="form-control" placeholder="[5; 6]" name="matrix_D">
+                                        <input type="text" class="form-control" placeholder="[0]" name="matrix_D">
                                         <div class="popup" onclick="myClickFunction('popupMD')">
                                             <span class="popuptext" id="popupMD"></span>
                                         </div>
@@ -375,7 +376,7 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text" id="basic-addon4">x:</span>
                           </div>
-                            <input onclick="myInfoFunction()" type="text" class="form-control" placeholder="[x1;x2;x3]" name="matrix_x">
+                            <input type="text" class="form-control" placeholder="[x1;x2]" name="matrix_x" value="[x1;x2]">
                             <div class="popup" onclick="myClickFunction('popupMx')">
                                 <span class="popuptext" id="popupMx"></span>
                             </div>
@@ -386,7 +387,7 @@
                           <div class="input-group-prepend">
                             <span class="input-group-text" id="basic-addon55">u:</span>
                           </div>
-                            <input type="text" class="form-control" placeholder="[u1]" name="matrix_u">
+                            <input type="text" class="form-control" placeholder="[u1]" name="matrix_u" value="[u1]">
                             <div class="popup" onclick="myClickFunction('popupMu')">
                                 <span class="popuptext" id="popupMu"></span>
                             </div>
@@ -412,7 +413,7 @@
                               <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon7">Nmin</span>
                               </div>
-                                <input type="text" class="form-control" placeholder="5" name="Nmin">
+                                <input type="text" class="form-control" placeholder="5" name="Nmin" value="5">
                                 <div class="popup" onclick="myClickFunction('popupNmin')">
                                     <span class="popuptext" id="popupNmin"></span>
                                 </div>
@@ -431,7 +432,7 @@
                               <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon9">Q</span>
                               </div>
-                                <input type="text" class="form-control" placeholder="[1,0; 0,1]" name="matrix_Q">
+                                <input type="text" class="form-control" placeholder="[1,0; 0,1]" name="matrix_Q" value="[1,0; 0,1]">
                                 <div class="popup" onclick="myClickFunction('popupMQ')">
                                     <span class="popuptext" id="popupMQ"></span>
                                 </div>
@@ -444,7 +445,7 @@
                               <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon10">x_ref</span>
                               </div>
-                                <input type="text" class="form-control" placeholder="[20; 20; 20]" name="x_ref">
+                                <input type="text" class="form-control" placeholder="[0; 0]" name="x_ref" value="[10; 0]">
                                 <div class="popup" onclick="myClickFunction('popupMxref')">
                                     <span class="popuptext" id="popupMxref"></span>
                                 </div>
@@ -455,7 +456,7 @@
                               <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon11">x_0</span>
                               </div>
-                                <input type="text" class="form-control" placeholder="[1; 2; 3]" name="x_zero">
+                                <input type="text" class="form-control" placeholder="[10;0]" name="x_zero" value="[10; 0]">
                                 <div class="popup" onclick="myClickFunction('popupMxzero')">
                                     <span class="popuptext" id="popupMxzero"></span>
                                 </div>
@@ -466,7 +467,7 @@
                               <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon12">R</span>
                               </div>
-                                <input type="text" class="form-control" placeholder="[1,0; 0,1]" name="matrix_R">
+                                <input type="text" class="form-control" placeholder="[1]" name="matrix_R" value="[1]">
                                 <div class="popup" onclick="myClickFunction('popupMR')">
                                     <span class="popuptext" id="popupMR"></span>
                                 </div>

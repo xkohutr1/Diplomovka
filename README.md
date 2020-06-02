@@ -23,9 +23,9 @@ a) Moznost vybrat si medzi stavovím opisom alebo Dif. rovnicami
 "Možné je zadefinovať iba stavové riadenie - čiže y,D,C Je nefunkčné"
 
 Vo väčšine prípadoch sa do polí zapisujú matice, maticový zápis je rovnaký ako v MATLABE.
-
-Príklad (State Space):
-(* potrebne zadefinovat - Upozornia na to alerty)
+Sú vopred zadefinované obe možnosti.
+Príklad pri definovaný nového riadenie(State Space):
+(* potrebne zadefinovat - Upozornia na to alerty pomocou validacie)
 
 STATE SPACE
 *A: [1,0;0,1]

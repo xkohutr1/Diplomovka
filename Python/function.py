@@ -236,7 +236,10 @@ class substitution:
         sub_this = sub_this_o.copy()
         by_this = by_this_o.copy()
         for i in range(len(sub_var)):
-            sub_variable = sub_var[i][0]
+            if isinstance(sub_var[i], list) == True:
+                sub_variable = sub_var[i][0]
+            else:
+                sub_variable = sub_var[i]
             sub = by_this[sub_variable]
             for ii in range(len(var)):
                 pom_variable = var[ii]
@@ -357,12 +360,9 @@ class creat_functions:
 
         model = substitution(x_raw, Model_Equation, '', variables)
         model = model.sol  # General Model
-        print(model)
         for m in range(len(model)):
             pom_model = substitute_numbers(model[m], Constants)
             model[m] = pom_model.sol
-        print(model)
-
         FUN = {}
         Nmin = int(Nmin) #Predikcny horizont
         for i in range(Nmin+1): #+1 pre vseobecnz model
@@ -378,8 +378,12 @@ class creat_functions:
                 pom_str = '_' + str(n)
                 if n == '':
                     pom_str = ''
+                if isinstance(x_raw[ii], list) == True:
+                    pom_x = x_raw[ii][0]
+                else:
+                    pom_x = x_raw[ii]
                 #x.append('(' + x_raw[ii][0] + pom_str + '-(' + x_ref[ii][0] + ')' +')')  # Static reference tracking
-                x.append('(' + x_raw[ii][0] + pom_str + '-(' + 'x_ref_' + str(ii) + ')' + ')')  # Dynamic reference tracking
+                x.append('(' + pom_x + pom_str + '-(' + 'x_ref_' + str(ii) + ')' + ')')  # Dynamic reference tracking
             ########################################### (Q*x)'*(Q*x) ###################################################
             # Matrix multiplication [(N x N) x (N x 1)] --> (N x 1)
             Q_x = matmul(matrix_Q,x)
@@ -461,24 +465,41 @@ class substitut:
         self.sol = Funk
 
 class decentralization:
-    def __init__(self, model, vars, k):
-        model = model.copy()
+    def __init__(self, Gmodel, vars, k, last_sequence):
+        G_model = Gmodel.copy()
         vars = vars.copy()
         dec_funk = []
         eval_lambda_fun = []
-        lambda_var = ['lambda'+str(i) + '_' + str(k) for i in range(len(model))]
+        lambda_var = ['lambda'+str(i) + '_' + str(k) for i in range(len(G_model))]
         ro = '1'
+
+        model = []
+        for i in range(k,last_sequence,-1):
+            G_model = Gmodel.copy()
+            for ii in range(len(G_model)):
+                for iii in range(len(vars)):
+                    var_model = vars[iii] + '_' + str(i - 1)
+                    G_model[ii] = G_model[ii].replace(vars[iii], var_model)
+                if i == k:
+                    model.append(G_model[ii])
+
+            for ii in range(len(G_model)):
+                for iii in range(len(G_model)):
+                    model[ii] = model[ii].replace(vars[iii]+ '_' + str(i), '('+G_model[iii]+')')
+
         for i in range(len(model)):
-            for ii in range(len(vars)):
-                var_model = vars[ii] + '_' + str(k - 1) + 's'
-                model[i] = model[i].replace(vars[ii], var_model)
             pre_var = vars[i] + '_' + str(k)
             pom_dec_funk = lambda_var[i] + '*' + '(' + model[i] + '-' + pre_var + ')' + '+(' + ro + '/2)' + '*' + '(' + model[i] + '-' + pre_var + ')^2'
-            eval_lambda_fun.append('0' + '+' + ro + '*' + '(' + model[i] + '-' + pre_var + 's' + ')')
+            eval_lambda_fun.append('0' + '+' + ro + '*' + '(' + model[i] + '-' + pre_var + ')')
             dec_funk.append(pom_dec_funk)
         dec_funk = '+'.join(dec_funk)
         self.sol = str(sp.simplify(dec_funk))
         self.Lambda = lambda_var
+        for iii in range(len(eval_lambda_fun)):
+            for ii in range(len(vars)):
+                for i in range(k,last_sequence-1,-1):
+                    var_model = vars[ii] + '_' + str(i) + 's'
+                    eval_lambda_fun[iii] = eval_lambda_fun[iii].replace(vars[ii] + '_' + str(i), var_model)
         self.Eval_lambda = eval_lambda_fun
 
 class derive:
@@ -487,6 +508,11 @@ class derive:
         vars = []
         if d == 0:
             d = 1
+
+        for i in range(k, k + d):
+            for ii in range(len(Variables)):
+                Funk = Funk.replace(Variables[ii] + '_' + str(i)+'s', Variables[ii] + '_' + str(i))
+
         for i in range(k,k+d):
             for ii in range(len(Variables)):
                 if (ii > len_of_x-1):
@@ -502,7 +528,7 @@ class derive:
                     grad.append('0')
         self.sol = grad
         self.opt_vars = vars
-
+        self.sep_fun = Funk
 class inicial_conditions:
     def __init__(self, Variables, x_zero):
         x0 = []
@@ -586,6 +612,7 @@ class MPC_Worker_Varialbe_value:
             variable = 'x_ref_' + str(i)
             All_var_val[variable] = str(x_referenc[i][0])
         self.sol = All_var_val
+        self.reference = x_referenc
 
 class MPC_Worker_Data_Grup:
     def __init__(self, Workers, Workers_data, All_workers_data):
@@ -598,12 +625,21 @@ class MPC_Worker_Data_Grup:
             value = All_workers_data[variable + 's']
             for i in range(len(keys)):
                 find_variable = keys[i]
-                if (function.find(find_variable)) != -1 or (gradient.find(find_variable)):
+                if (function.find(find_variable)) != -1 or (gradient.find(find_variable) != -1):
                     pom_value = All_workers_data[keys[i]]
-                    function = function.replace(find_variable,str(pom_value))
-                    gradient = gradient.replace(find_variable,str(pom_value))
+                    function = function.replace(find_variable,'('+str(pom_value)+')')
+                    gradient = gradient.replace(find_variable,'('+str(pom_value)+')')
             data.append([str(sp.simplify(gradient)), variable, str(sp.simplify(value)), str(sp.simplify(function))])
         self.sol = data
+
+class Find_previous_input:
+    def __init__(self, MPC):
+        Variables = MPC.Variables
+        Variables = Variables.split(';')
+        GModel = MPC.General_Model
+        GModel = GModel.split(';')
+        var = [Variables[jj] + '_' + str(0) for jj in range(len(GModel),len(Variables),)]
+        self.sol = var
 
 class Calculate_criteria:
     def __init__(self, criteria, Workers_data_all):
@@ -611,6 +647,17 @@ class Calculate_criteria:
             if criteria.find(var):
                 criteria = criteria.replace(var, Workers_data_all[var])
         criteria = np.abs(sp.simplify(criteria))
+        self.sol = criteria
+
+class Calculate_input_criteria:
+    def __init__(self, old_data, Workers_data_all):
+        keys = [i for i in old_data.keys()]
+        criteria = 0
+        for var in keys:
+            new_value = float(Workers_data_all[var+'s'])
+            old_value = float(old_data[var])
+            criteria = criteria + np.power(new_value-old_value,2)
+        criteria = np.sqrt(criteria)
         self.sol = criteria
 
 class Simulation:
@@ -628,37 +675,19 @@ class Simulation:
         for j in range(len(GModel)):
             for jj in range(len(Variables)):
                 var_model = Variables[jj] + '_' + str(0) + 's'
-                GModel[j] = GModel[j].replace(Variables[jj], Workers_data_all[var_model])
+                GModel[j] = GModel[j].replace(Variables[jj], '('+Workers_data_all[var_model]+')')
             GModel[j] = str(sp.simplify(GModel[j]))
 
             norm.append('(' + GModel[j] + '-' + x_referenc[j][0] + ')^2')
         norm = 'sqrt(' + '+'.join(norm) + ')'
         norm = sp.simplify(norm)
 
+        input_val = []
+        for i in range(len(x_referenc),len(Variables),1):
+            var_model = Variables[i] + '_' + str(0) + 's'
+            input_val.append(Workers_data_all[var_model])
+
         self.sol = GModel
         self.variable = var
         self.norm = norm
-
-################################################ THRESH ################################################################
-class Separation_of_function:
-    def __init__(self, CFunction,sep_var):
-        sep_var = sep_var.split(';')
-        sep_function = []
-        for i in range(len(sep_var)):
-
-            sep_var[i] = sep_var[i].replace('[','')
-            sep_var[i] = sep_var[i].replace(']','')
-            var = sep_var[i].split(',')
-            itegration = []
-            if len(var) > 1:
-                for ii in range(len(var)):
-                    derivation =  sp.diff(CFunction, var[ii])
-                    int_vat = sp.Symbol(var[ii])
-                    itegration.append(str(sp.integrate(derivation,int_vat)))
-                sep_function.append(''.join(itegration))
-            else:
-                derivation = sp.diff(CFunction, var[0])
-                int_vat = sp.Symbol(var[0])
-                itegration = sp.integrate(derivation, int_vat)
-                sep_function.append(str(itegration))
-        self.SepFunction = sep_function
+        self.input = input_val
