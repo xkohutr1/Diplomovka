@@ -39,14 +39,14 @@
                             for(i=0;i < data_y_graph.length;i++){
                                 function getRandomRgb() {
                                     var r = Math.floor(Math.random()*256);
-                                    var g = Math.floor(Math.random()*256);
+                                    var g = Math.floor(Math.random()*100);
                                     var b = Math.floor(Math.random()*256);
                                     return 'rgb(' + r + ', ' + g + ', ' + b + ')';
                                 }
                                 if (i < data['x'].length){
-                                    var_name = 'x_'+String(i)
+                                    var_name = 'x_'+String(i+1)
                                 }else{
-                                    var_name = 'x_ref_'+String(i-data['x'].length)
+                                    var_name = 'x_ref_'+String(i+1-data['x'].length)
                                 }
                                 var new_dataset = {
                                     label: [var_name],
@@ -76,7 +76,7 @@
                             for(i=0;i < data_y_graph.length;i++){
                                 function getRandomRgb() {
                                     var r = Math.floor(Math.random()*256);
-                                    var g = Math.floor(Math.random()*256);
+                                    var g = Math.floor(Math.random()*100);
                                     var b = Math.floor(Math.random()*256);
                                     return 'rgb(' + r + ', ' + g + ', ' + b + ')';
                                 }
