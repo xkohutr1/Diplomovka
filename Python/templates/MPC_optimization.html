@@ -14,7 +14,7 @@
         var data_y_graph=0;
         var dimension_y = [];
         $(document).ready(function() {
-            var socket = io.connect('http://localhost:5000/');
+            var socket = io.connect('http://localhost:8080/');
 
             socket.on('connect', function() {
                 socket.emit('mpc_connect_websocetio','User has connected!',client_id,'');
@@ -321,15 +321,28 @@
           </div>
         </div>
         <div class="col-sm-8" id="add_graph">
+            <button type="button" class="btn btn-dark" onclick="change_label(Chart_states)">Set x label</button>
             <div class="chart-container">
                 <canvas id="Chart_states" width="200" height="100"></canvas>
             </div>
-
+            <button type="button" class="btn btn-dark" onclick="change_label(Chart_inputs)">Set x label</button>
             <div class="chart-container">
                 <canvas id="Chart_inputs" width="200" height="100"></canvas>
             </div>
         </div>
         <script>
+            function change_label(chart){
+                  var label_name = prompt("Please enter name for x label", "[-]");
+                  if (label_name != null) {
+                    if (chart == Chart_inputs){
+                        Chart_inputs.options.scales.yAxes[0].scaleLabel.labelString = label_name;
+                        myBar.update();
+                    }else{
+                        Chart_states.options.scales.yAxes[0].scaleLabel.labelString = label_name;
+                        myBar.update();
+                    }
+                  }
+            }
             var ctx = document.getElementById('Chart_states').getContext('2d');
             var Chart_states = new Chart(ctx, {
                 type: 'line',
@@ -341,6 +354,20 @@
                     title: {
                         display: true,
                         text: 'Graph of State Development:'
+                    },
+                    scales: {
+                        xAxes: [{
+                          scaleLabel: {
+                            display: true,
+                            labelString: 'Number of steps [-]'
+                          }
+                        }],
+                        yAxes: [{
+                          scaleLabel: {
+                            display: true,
+                            labelString: ''
+                          }
+                        }]
                     }
                 }
             });
@@ -356,6 +383,20 @@
                     title: {
                         display: true,
                         text: 'Graph of Control Performance:'
+                    },
+                    scales: {
+                        xAxes: [{
+                          scaleLabel: {
+                            display: true,
+                            labelString: 'Number of steps [-]'
+                          }
+                        }],
+                        yAxes: [{
+                          scaleLabel: {
+                            display: true,
+                            labelString: ''
+                          }
+                        }]
                     }
                 }
             });
