@@ -2,7 +2,7 @@
 \label{se:MPC_ADMM}
 V tejto časti teórie spojíme \hyperref[subse:MPC]{MPC(2.1.1)} a \hyperref[subse:ADMM]{ADMM (2.4)}. Najskôr aplikujeme ADMM na lineárnom riadení, ukážeme si ako rozložiť MPC podla predikčných horizontov a vysvetlíme si spôsob, akým budeme získavať optimálne decentralizované riešenia. V druhej časti si ukážeme, čo všetko musíme nahradiť a upraviť, aby sme boli schopní použiť ADMM pri nelineárnom riadení. 
 
-\subsection{Linearne prediktívne riadenie}
+\subsection{Lineárne prediktívne riadenie}
 \label{subse:Lin_MPC_ADMM}
 Ako sme už spomínali, v tejto časti využijeme ADMM pre lineárne riadenie. Takže naším cieľom bude overiť funkčnosť paralelného riešenia decentralizovaného optimalizačného problému so snahou zrýchliť výpočet MPC. Myšlienka spočíva v rozdelení MPC na $N$ predikčných horizontov a následné paralelné riešenie decentralizovaného MPC. Tento výpočet bude prebiehať na viacerých počítačoch, ktoré budú hľadať centralizované riešenie. 
 
@@ -12,7 +12,7 @@ Majme linearne MPC bez ohraničení:
 	\begin{align}
 		\displaystyle \min_{u_0,...,u_{N-1}} \hspace{0.1cm} & 
 		\sum_{k=1}^{N}\norm{Qx_k}^{2}_{2}+\sum_{k=0}^{N-1}\norm{Ru_k}^{2}_{2},\\
-		\textrm{s.t.} \hspace{0.5cm} & x_{k+1} = Ax_{k}+Bu_{k}\hspace{0.5cm} k=0,\dots,N-1,\\
+		\textrm{v.n.} \hspace{0.5cm} & x_{k+1} = Ax_{k}+Bu_{k}\hspace{0.5cm} k=0,\dots,N-1,\\
 		& x_{0} = x(t).
 	\end{align}
 \end{subequations}
@@ -22,7 +22,7 @@ Ako príklad si zoberme MPC pre predikčný horizont $N = 3$:
 \begin{subequations}
 	\begin{align}
 		\displaystyle\min_{u_0,u_1,u_2}\hspace{0.1cm}&\norm{Qx_1}^{2}_{2}+\norm{Qx_2}^{2}_{2}+\norm{Qx_3}^{2}_{2}+\norm{Ru_0}^{2}_{2}+\norm{Ru_1}^{2}_{2}+\norm{Ru_2}^{2}_{2},\\
-		& x_{0} = x(t),\\
+		\textrm{v.n.} \hspace{0.3cm}& x_{0} = x(t),\\
 		&x_{1} = Ax_{0}+Bu_{0},\\
 		&x_{2} = Ax_{1}+Bu_{1},\\
 		&x_{3} = Ax_{2}+Bu_{2}.
@@ -35,7 +35,7 @@ Za každý stav si môžeme dosadiť model systému v príslušnom kroku $k=1,\d
 			\displaystyle\min_{u_0,u_1,u_2}\hspace{0.1cm}&\norm{Q(Ax_{0}+Bu_{0})}^{2}_{2}+\norm{Ru_0}^{2}_{2}+\norm{Q(Ax_{1}+Bu_{1})}^{2}_{2}+\norm{Ru_1}^{2}_{2}+\\
 			&\norm{Q(Ax_{2}+Bu_{2})}^{2}_{2}+\norm{Ru_2}^{2}_{2}
 	\end{split}\\
-	& x_{0} = x(t).
+	\textrm{v.n.} \hspace{0.3cm}& x_{0} = x(t).
 	\end{align}
 \end{subequations}
 Teraz máme optimalizačný problém, ktorý chceme optimalizovať pre každý predikčný horizont samostatne. Takže pre každý stav musíme poznať počiatočné podmienky ($x_0,x_1,x_2$). V našom prípade máme počiatočné podmienky iba pre prvý stav, rovnica (2.16b), čiže ostatné musíme hľadať. Práve k tomu nám dopomôže duálna funkcia, ktorá bude koordinovať hľadané počiatočné stavy s ich skutočnými hodnotami. 
@@ -50,7 +50,7 @@ kde $H_{1} = B$ a je definované ako $H_{1} \in {\rm I\!R}^{n_{u}\times n_{u}}$,
 		\displaystyle \min_{u_0,...,u_{N-1},x_1,...,x_N} \hspace{0.1cm} & 
 		\sum_{k=1}^{N}
 		\norm{Qx_k}^{2}_{2}+\sum_{k=0}^{N-1}\norm{Ru_k}^{2}_{2},\\
-		\textrm{s.t.} \hspace{1.1cm} & x_{n+1} = Ax_{k}+Bu_{k} \hspace{0.5cm} k=0,\dots,N-1,\\
+		\textrm{v.n.} \hspace{1.1cm} & x_{n+1} = Ax_{k}+Bu_{k} \hspace{0.5cm} k=0,\dots,N-1,\\
 		& x_{0} = x(t),\\
 		&H_{1}u_{k-1} + H_{2}x_{k} = -Ax_{k-1}\hspace{0.5cm} k=1,\dots,N.
 	\end{align}
@@ -113,10 +113,10 @@ kde $U$ je definované ako $U \in {\rm I\!R}^{p\times1}, p = n_{x} + n_{u}$, po�
 Ako môžeme vidieť, takto upravenú Lagrangianovú funkciu môžeme jednoducho optimalizovať vzhľadom k jednotlivým krokom predikčného horizontu:
 \begin{subequations}
 	\begin{align}
-	&u_{0}^{(i+1)} = \argmin_{u_{0}} \mathcal{L}_{\rho} \left(u_{0},x_{0},x_{1}^{i},\lambda_{1}^{i}\right)\\
-	&U_{k}^{(i+1)} = \argmin_{U_{k}} \mathcal{L}_{\rho} \left(U_{k},U_{k-1}^{i},\lambda_{k}^{i},U_{k+1}^{i},\lambda_{k+1}^{i}\right) \hspace{0.5cm} k=1,\dots,N-2\\
-	&U_{k}^{(i+1)} = \argmin_{U_{k}} \mathcal{L}_{\rho}\left(U_{k},U_{k-1}^{i},\lambda_{k}^{i}\right) \hspace{0.5cm} k=N-1\\
-	&\lambda_{k}^{(i+1)} = \lambda_{k}^{i} + \rho( \tilde{H}_{1}U_{k-1}^{(i+1)} + \tilde{H}_{2}U_{k}^{(i+1)} - \tilde{A}U_{k-1})\hspace{0.5cm} k=1,\dots,N-1
+	&u_{0}^{(i+1)} = \argmin_{u_{0}} \mathcal{L}_{\rho} \left(u_{0},x_{0},x_{1}^{(i)},\lambda_{1}^{(i)}\right)\\
+	&U_{k}^{(i+1)} = \argmin_{U_{k}} \mathcal{L}_{\rho} \left(U_{k},U_{k-1}^{(i)},\lambda_{k}^{(i)},U_{k+1}^{(i)},\lambda_{k+1}^{(i)}\right) \hspace{0.5cm} k=1,\dots,N-2\\
+	&U_{k}^{(i+1)} = \argmin_{U_{k}} \mathcal{L}_{\rho}\left(U_{k},U_{k-1}^{(i)},\lambda_{k}^{(i)}\right) \hspace{0.5cm} k=N-1\\
+	&\lambda_{k}^{(i+1)} = \lambda_{k}^{(i)} + \rho\left( \tilde{H}_{1}U_{k-1}^{(i+1)} + \tilde{H}_{2}U_{k}^{(i+1)} - \tilde{A}U_{k-1}\right)\hspace{0.5cm} k=1,\dots,N-1
 	\end{align}
 \end{subequations}
 Postup pri iterácií v ADMM sme si vysvetlili v kapitole \hyperref[subse:ADMM2]{(2.4)}. Keďže pracujeme s lineárnym modelom, pre minimalizáciu Lagrangianovej funkcie sme si zvolili analytickú metódu optimalizácie. Nájdeme teda gradient Lagrangianovej funkcie vzhľadom k optimalizovanej premennej, položíme ho rovný nule a vyjmeme si optimalizovanú premennú:
@@ -132,8 +132,8 @@ Máme tri prípady, ktoré môžu nastať \hyperref[math:Linear_Lagrangean]{rovn
 				\begin{split}
 					&\mathcal{L}_{\rho} =\norm{Q(Ax_{0}+Bu_{0})}^{2}_{2}+\norm{Ru_{0}}^{2}_{2} +\lambda_{1}^{T}\left(H_{1}u_{0} + H_{2}x_{1} + Ax_{0} \right)+\\&\hspace{0.8cm}\norm{H_{1}u_{0} + H_{2}x_{1} + Ax_{0}}_{2}^{2}+\dots
 				\end{split}\\
-				&\frac{\partial \mathcal{L}_{\rho}\left(u_{0},x_{0},x_{1}^{i},\lambda_{1}^{i}\right)}{\partial u_{0}} = 0,\\
-				&u_{0}^{*} = -M_{0}^{-1}\left(2B^{T}Q^{T}QAx_{0}+H_{1}^{T}(\lambda_{1}^{i}+\rho H_{2}x_{1}^{i}+\rho Ax_{0})\right),\\
+				&\frac{\partial \mathcal{L}_{\rho}\left(u_{0},x_{0},x_{1}^{(i)},\lambda_{1}^{(i)}\right)}{\partial u_{0}} = 0,\\
+				&u_{0}^{*} = -M_{0}^{-1}\left(2B^{T}Q^{T}QAx_{0}+H_{1}^{T}(\lambda_{1}^{(i)}+\rho H_{2}x_{1}^{(i)}+\rho Ax_{0})\right),\\
 				&M_{0} = 2B^{T}Q^{T}QB + 2R^{T}R +\rho H_{1}^{T}H_{1}.
 			\end{align}
 		\end{subequations}
@@ -141,27 +141,27 @@ Máme tri prípady, ktoré môžu nastať \hyperref[math:Linear_Lagrangean]{rovn
 	\item{Keď krok predikčného horizontu $k$ sa nachádza v otvorenom intervale $\left(0,N-1\right)$:\\
 		\begin{subequations}
 			\begin{align}
-				&\frac{\partial \mathcal{L}_{\rho}\left(U_{k},U_{k-1}^{i},\lambda_{k}^{i},U_{k+1}^{i},\lambda_{k+1}^{i}\right)}{\partial U_{k}} = 0,\\
-				&U_{k}^{*} = -M_{n}^{-1}\left(\tilde{H}_{2}^{T}f_{1}(\lambda_{k}^{i},U_{k-1}^{i})+(\tilde{H}_{1}^{T}+\tilde{A}^{T})f_{2}(\lambda_{k+1}^{i},U_{k+1}^{i})\right),\\
+				&\frac{\partial \mathcal{L}_{\rho}\left(U_{k},U_{k-1}^{(i)},\lambda_{k}^{(i)},U_{k+1}^{(i)},\lambda_{k+1}^{(i)}\right)}{\partial U_{k}} = 0,\\
+				&U_{k}^{*} = -M_{n}^{-1}\left(\tilde{H}_{2}^{T}f_{1}(\lambda_{k}^{(i)},U_{k-1}^{(i)})+(\tilde{H}_{1}^{T}+\tilde{A}^{T})f_{2}(\lambda_{k+1}^{(i)},U_{k+1}^{(i)})\right),\\
 				\begin{split}
 					& M_{n} = 2\tilde{A}^{T}\tilde{Q}^{T}\tilde{Q}\tilde{A}+2\tilde{A}^{T}\tilde{Q}^{T}\tilde{Q}\tilde{B}+2\tilde{B}^{T}\tilde{Q}^{T}\tilde{Q}\tilde{B}+2\tilde{B}^{T}\tilde{Q}^{T}\tilde{Q}\tilde{A}+\\
 					&\hspace{1.0cm}2\tilde{R}^{T}\tilde{R} + \rho\tilde{H}_{2}^{T}\tilde{H}_{2}+ \rho\tilde{H}_{1}^{T}\tilde{H}_{1} + \rho\tilde{H}_{1}^{T}\tilde{A} + \rho\tilde{A}^{T}\tilde{H}_{1}+ \rho\tilde{A}^{T}\tilde{A}
 				\end{split}\\
-				& f_{1}(\lambda_{k}^{i},U_{k-1}^{i}) = \lambda_{k}^{i} + \rho\tilde{H}_{1}U_{k-1}^{i}+\rho\tilde{A}U_{k-1}^{i},\\
-				& f_{2}(\lambda_{k+1}^{i},U_{k+1}^{i}) = \lambda_{k+1}^{i} + \rho\tilde{H}_{2}U_{k+1}^{i}.
+				& f_{1}\left(\lambda_{k}^{(i)},U_{k-1}^{(i)}\right) = \lambda_{k}^{(i)} + \rho\tilde{H}_{1}U_{k-1}^{(i)}+\rho\tilde{A}U_{k-1}^{(i)},\\
+				& f_{2}\left(\lambda_{k+1}^{(i)},U_{k+1}^{(i)}\right) = \lambda_{k+1}^{(i)} + \rho\tilde{H}_{2}U_{k+1}^{(i)}.
 			\end{align}
 		\end{subequations}
 	}
 		\item{Posledný krok predikčného horizontu $k = N-1$:\\
 		\begin{subequations}
 			\begin{align}
-			&\frac{\partial \mathcal{L}_{\rho}\left(U_{k},U_{k-1}^{i},\lambda_{k}^{i}\right)}{\partial U_{k}} = 0,\\
-			&U_{k}^{*} = -M_{N}^{-1}\tilde{H}_{2}^{T}f_{1}(\lambda_{k}^{i},U_{k-1}^{i}),\\
+			&\frac{\partial \mathcal{L}_{\rho}\left(U_{k},U_{k-1}^{(i)},\lambda_{k}^{(i)}\right)}{\partial U_{k}} = 0,\\
+			&U_{k}^{*} = -M_{N}^{-1}\tilde{H}_{2}^{T}f_{1}\left(\lambda_{k}^{(i)},U_{k-1}^{(i)}\right),\\
 			\begin{split}
 			& M_{N} = 2\tilde{A}^{T}\tilde{Q}^{T}\tilde{Q}\tilde{A}+2\tilde{A}^{T}\tilde{Q}^{T}\tilde{Q}\tilde{B}+2\tilde{B}^{T}\tilde{Q}^{T}\tilde{Q}\tilde{B}+2\tilde{B}^{T}\tilde{Q}^{T}\hat{Q}\tilde{A}+\\
 			&\hspace{1.0cm}2\tilde{R}^{T}\tilde{R} + \rho\tilde{H}_{2}^{T}\tilde{H}_{2}
 			\end{split}\\
-			& f_{1}(\lambda_{k}^{i},U_{k-1}^{i}) = \lambda_{k}^{i} + \rho\tilde{H}_{1}U_{k-1}^{i}+\rho\tilde{A}U_{k-1}^{i}.
+			& f_{1}\left(\lambda_{k}^{(i)},U_{k-1}^{(i)}\right) = \lambda_{k}^{(i)} + \rho\tilde{H}_{1}U_{k-1}^{(i)}+\rho\tilde{A}U_{k-1}^{(i)}.
 			\end{align}
 		\end{subequations}
 	}
@@ -177,7 +177,7 @@ Zadefinujeme si MPC v nasledovnom tvare:
 \begin{subequations}
 	\begin{align}
 	\displaystyle \min_{u_0,...,u_{N-1}} \hspace{0.1cm} &\sum_{k=1}^{N}\norm{Qx_k}^{2}_{2}+\sum_{k=0}^{N-1}\norm{Ru_k}^{2}_{2},\\
-	\textrm{s.t.} \hspace{0.5cm} & x_{k+1} = f(x_{k},u_{k})\hspace{0.5cm} k=0,\dots,N-1,\\
+	\textrm{v.n.} \hspace{0.5cm} & x_{k+1} = f(x_{k},u_{k})\hspace{0.5cm} k=0,\dots,N-1,\\
 	& x_{0} = x(t).
 	\end{align}
 \end{subequations}
@@ -193,7 +193,7 @@ Rovnako ako pri lineárnom MPC v časti \hyperref[math:ADMM_MPC]{(2.5.1)} si roz
 	\sum_{k=0}^{N-1}\norm{
 		Ru_k
 	}^{2}_{2},\\
-	\textrm{s.t.} \hspace{1.1cm} & x_{k+1} = f(x_{k},u_{k})\hspace{0.5cm} k=0,\dots,N-1,\\
+	\textrm{v.n.} \hspace{1.1cm} & x_{k+1} = f(x_{k},u_{k})\hspace{0.5cm} k=0,\dots,N-1,\\
 	& x_{0} = x(t),\\
 	& x_{k}(x_{k-1},u_{k-1})- x_{k} = 0 \hspace{0.5cm} k=1,\dots,N-1.
 	\end{align}
@@ -214,20 +214,20 @@ Na rozdiel od lineárneho MPC sú tieto podmienky, rovnako ako aj model, neline�
 ktorú budeme riešiť separátne vzhľadom k jednotlivým krokom predikčného horizontu:
 \begin{subequations}
 \begin{align}
-	&u_{0}^{(i+1)} = \argmin_{u_{0}} \mathcal{L}_{\rho} \left(u_0,x_{0},u_1^{i},x_{1}^{i},\lambda_{1}^{i}\right),\\
+	&u_{0}^{(i+1)} = \argmin_{u_{0}} \mathcal{L}_{\rho} \left(u_0,x_{0},u_1^{(i)},x_{1}^{(i)},\lambda_{1}^{(i)}\right),\\
 	\begin{split}
 		&\begin{bmatrix}
 		u_{k}^{(i+1)} \\
 		x_{k}^{(i+1)}
 		\end{bmatrix} = 
-		\argmin_{u_{k},x_{k}} \mathcal{L}_{\rho} (u_{k},x_{k},u_{k-1}^{i},x_{k-1}^{i},\lambda_{k}^{i},\\
-		&\hspace{3.5cm}u_{k+1}^{i},x_{k+1}^{i},\lambda_{k+1}^{i})\hspace{0.5cm} k=1,\dots,N-2
+		\argmin_{u_{k},x_{k}} \mathcal{L}_{\rho} \left(u_{k},x_{k},u_{k-1}^{(i)},x_{k-1}^{(i)},\lambda_{k}^{(i)},\right.\\
+		&\left.\hspace{3.5cm}u_{k+1}^{(i)},x_{k+1}^{(i)},\lambda_{k+1}^{(i)}\right) \hspace{0.5cm} k=1,\dots,N-2
 	\end{split}\\
 	&\begin{bmatrix}
 		u_{k}^{(i+1)} \\
 		x_{k}^{(i+1)}
-	\end{bmatrix} = \argmin_{u_{k},x_{k}} \mathcal{L}_{\rho} \left(u_{k},x_{k},u_{k-1}^{i},x_{k-1}^{i},\lambda_{k-1}^{i}\right) \hspace{0.5cm} k=N-1,\\
-	&\lambda_{k}^{(i+1)} = \lambda_{k}^{i} + \rho( x_{k}(x_{k-1}^{(i+1)},u_{k-1}^{(i+1)}) - x_{k}^{(i+1)}) \hspace{0.5cm} k=1,\dots,N-1.
+	\end{bmatrix} = \argmin_{u_{k},x_{k}} \mathcal{L}_{\rho} \left(u_{k},x_{k},u_{k-1}^{(i)},x_{k-1}^{(i)},\lambda_{k-1}^{(i)}\right) \hspace{0.5cm} k=N-1,\\
+	&\lambda_{k}^{(i+1)} = \lambda_{k}^{(i)} + \rho( x_{k}(x_{k-1}^{(i+1)},u_{k-1}^{(i+1)}) - x_{k}^{(i+1)}) \hspace{0.5cm} k=1,\dots,N-1.
 \end{align}
 \end{subequations}
 Zmena nastáva vo forme riešenia týchto optimalizačných problémov. 
@@ -258,13 +258,13 @@ Backtracking je iteračná metóda výpočtu kroku, ktorá z efektívni numerick
 	\item[Krok 2:] {Zvolíme si začiatočný krok $t_0$ tento krok sa bude vždy nastavovať s každou iteráciou.}
 	\item[Krok 3:] {Meníme $t=\beta t$ pokiaľ bude platiť $f(x+t\Delta x) > \alpha t\nabla f(x)^{T}\Delta x$.}
 \end{description}
-Newtonova metóda potrebuje omnoho menej iteracií ako gradientová, ale aby sme ju mohli použiť, musíme zaviesť niekoľko predpokladov.
+Newtonova metóda potrebuje omnoho menej iteracií ako gradientová, ale aby sme ju mohli použiť, musíme zaviesť niekoľko predpokladov \cite{bib12}.
 \begin{enumerate}
 	\item{
-		Hessova matica musí byť kladne definitný (funkcia musí byť konvexná).
+		Hessova matica musí byť kladne definitná (funkcia musí byť konvexná).
 	}
 	\item{
-		Funkcia musí byť dvojito spojite diferencovateľná.
+		Funkcia musí byť dvakrát spojite diferencovateľná.
 	}
 \end{enumerate}
 V našom prípade máme účelovú funkciu poskladanú z kvadrátu dva normy, ktorý zabezpečuje konvexnosť a teda sme mohli využiť túto metódu. Ak by sme však mali inú účelovú funkciu, museli by sme využiť buď gradientovú  alebo nejakú bezgradientovú metódu (Simulované žíhanie, Luus-Jaakola atď.).
@@ -276,13 +276,13 @@ Ako sme už spomínali, jedna z najväčších výhod MPC, je schopnosť zahrnú
 	\begin{align}
 	\displaystyle \min_{x} \hspace{0.5cm} & 
 	f_{0}(x)\\
-	\textrm{s.t.} \hspace{0.5cm} & f_{i}(x) \leq 0 \hspace{0.5cm} i=0,\dots,N
+	\textrm{v.n.} \hspace{0.5cm} & f_{i}(x) \leq 0 \hspace{0.5cm} i=0,\dots,N
 	\end{align}
 \end{subequations}
 Najlepším spôsobom je vytvoriť z ohraničeného optimalizačného problému rovnice (2.33) neohraničený, a to tak, že zahrnieme ohraničenia do účelovej funkcie: 
 \begin{align}
 \displaystyle \min_{x} \hspace{0.5cm} & 
-f(x) + \sum_{i=0}^{N}I_{-}\left(f_{i}(x)\right).
+f_{0}(x) + \sum_{i=0}^{N}I_{-}\left(f_{i}(x)\right).
 \end{align}
 Jedna z metód, ktorá zahŕňa ohraničenia do účelovej funkcie je bariérová metóda. Táto metóda pracuje so špeciálne upravenou účelovou funkciou, rovnica (2.34), ktorá obsahuje takzvanú indikátorovú funkciu $I_{-}$. Táto funkcia penalizuje body, nachádzajúce sa za ohraničením. Indikátorová funkcia má nasledovný tvar:
 \begin{align}
@@ -295,15 +295,15 @@ Jedna z metód, ktorá zahŕňa ohraničenia do účelovej funkcie je bariérov�
 Takáto funkcia vnáša problém do našej optimalizácie, lebo nie je spojite diferencovateľná. Preto si túto funkciu musíme nahradiť bariérovou funkciou $\phi$, ktorá bude aproximovať ideálnu indikátorovú funkciu:
 \begin{align}
 \displaystyle \min_{x} \hspace{0.5cm} & 
-f(x) + \sum_{i=0}^{N}\phi\left(f_{i}(x)\right).
+f_{0}(x) + \sum_{i=0}^{N}\phi\left(f_{i}(x)\right).
 \end{align}
 S tým, že sme použili aproximáciu, sme vniesli istú chybu do optimalizácie. Čím použijeme presnejšiu aproximáciu, tým bude chyba menšia, ale narastá počet iterácií počas optimalizácie. Zavedieme teda určitý parameter $\mu$, ktorý bude postupne zmenšovať váhu bariérovej funkcie, a tým dosiahneme najlepšie výsledky vzhľadom k presnosti a rýchlosti optimalizácie. Výsledný tvar funkcie bude nasledovný:
 \begin{align}
 \displaystyle \min_{x} \hspace{0.5cm} & 
-f(x) + \sum_{i=0}^{N}\mu\phi\left(f_{i}(x)\right).
+f_{0}(x) + \sum_{i=0}^{N}\mu\phi\left(f_{i}(x)\right).
 \end{align}
 V tejto práci budeme využívať logaritmus ako bariérovú funkciu:
 \begin{equation}
 	\phi\left(f_{i}(x)\right) = -\log(-f_{i}(x)).
 \end{equation}
-Logaritmus nám vytvorí bariéru v našej účelovej funkcii. Čim viac sa bude optimalizovaná premenná blížiť k ohraničeniu, tým viac bude jej hodnota narastať. Počas optimalizácie budeme postupne zmenšovať váhu bariérovej funkcie a tým dovolíme optimalizovanej premennej sa čo najbližšie priblížiť k ohraničeniu. Teda vďaka bariérovej metóde sme pretransformovali externé ohraničenia (dané z optimalizačnej úlohy) na interné ohraničenia (dané definičným oborom účelovej funkcie) a sme tak schopní riešiť neohraničený optimalizačný problém, ktorý zahŕňa ohraničenia. 
+Logaritmus nám vytvorí bariéru v našej účelovej funkcii. Čim viac sa bude optimalizovaná premenná blížiť k ohraničeniu, tým viac bude jej hodnota narastať. Počas optimalizácie budeme postupne zmenšovať váhu bariérovej funkcie a tým dovolíme optimalizovanej premennej sa čo najbližšie priblížiť k ohraničeniu. Teda vďaka bariérovej metóde sme pretransformovali externé ohraničenia (dané z optimalizačnej úlohy) na interné ohraničenia (dané definičným oborom účelovej funkcie) a sme tak schopní riešiť neohraničený optimalizačný problém, ktorý zahŕňa ohraničenia \cite{bib12}. 

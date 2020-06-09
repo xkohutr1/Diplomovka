@@ -20,19 +20,19 @@ Základnú formuláciu lineárneho MPC si zadefinujeme nasledovne:
 \label{math:LinearneMPC}
 \begin{subequations}
 	\begin{align}
-		\displaystyle \min_{u_0,...,u_{N-1}} \hspace{0.1cm}, & 
+		\displaystyle \min_{u_0,...,u_{N-1}} \hspace{0.1cm} & 
 		\sum_{k=1}^{N}\norm{Qx_k}^{2}_{2}+\sum_{k=0}^{N-1}\norm{Ru_k}^{2}_{2},\\
-		\textrm{s.t.} \hspace{0.5cm} & x_{k+1} = Ax_{k}+Bu_{k}\hspace{0.5cm} k=0,\dots,N-1,\\
+		\textrm{v.n.} \hspace{0.5cm} & x_{k+1} = Ax_{k}+Bu_{k}\hspace{0.5cm} k=0,\dots,N-1,\\
 		& x_{0} = x(t),\\
 		& \underline{x} \leq x_{k} \leq \overline{x}\hspace{0.5cm} k=0,\dots,N,\\
 		& \underline{u} \leq u_{k} \leq \overline{u}\hspace{0.5cm} k=0,\dots,N-1,
 	\end{align}
 \end{subequations}
-kde matica $Q$ predstavuje váhovú maticu stavov definovanú ako $Q \in {\rm I\!R}^{n_{x}\times n_{x}}$, matica $R$ je váhová maticu vstupov definovaná ako $R \in {\rm I\!R}^{n_{u}\times n_{u}}$. Pomocou týchto váhových matíc si môžme nastavovať prioritu počas optimalizácie pre každý stav a vstup samostatne. 
+kde matica $Q$ predstavuje váhovú maticu stavov definovanú ako $Q \in {\rm I\!R}^{n_{x}\times n_{x}}$, matica $R$ je váhová maticu vstupov definovaná ako $R \in {\rm I\!R}^{n_{u}\times n_{u}}$. Pomocou týchto váhových matíc si môžme nastavovať prioritu počas optimalizácie pre každý stav a vstup samostatne \cite{bib11}. 
 
 \subsection{Lineárne riadenie s kompenzáciou nelinearity}
 \label{subse:LinearneMPCKomp}
-Najjednoduchšou formou prediktívneho riadenia je lineárne riadenie. V rámci MPC sa používa lineárny model s lineárnymi ohraničeniami. Ide o najmenej komplikovanú formu, ktorá má výhodu v krátkom výpočtovom čase, čo sa môže hodiť pri systémoch s rýchlou dynamikou. Keďže všetko je vždy o kompromisoch a za rýchlym výpočtovým časom je veľa zanedbaní, ktoré sú najmä v lineárnom modeli. V realite sa málokedy stretneme so systémom, ktorý by stačilo opísať jednoduchým stavovým modelom a riadenie by fungovalo bezchybne. Pri takomto riadení vznikajú trvalé regulačné odchýlky. Aby sa tomu predišlo, musia sa pridávať doplnkové opatrenia, ktoré by vyrovnávali nelinearitu. 
+Najjednoduchšou formou prediktívneho riadenia je lineárne riadenie. V rámci MPC sa používa lineárny model s lineárnymi ohraničeniami. Ide o najmenej komplikovanú formu, ktorá má výhodu v krátkom výpočtovom čase, čo sa môže hodiť pri systémoch s rýchlou dynamikou. Keďže všetko je vždy o kompromisoch, za rýchlym výpočtovým časom je veľa zanedbaní, ktoré sú najmä v lineárnom modeli. V realite sa málokedy stretneme so systémom, ktorý by stačilo opísať jednoduchým stavovým modelom a riadenie by fungovalo bezchybne. Pri takomto riadení vznikajú trvalé regulačné odchýlky. Aby sa tomu predišlo, musia sa pridávať doplnkové opatrenia, ktoré by vyrovnávali nelinearitu. 
 
 Jedným z najefektívnejších je pridať integračné vlastnosti regulátoru. Pomocou nich bude regulátor minimalizovať rozdiel medzi nelineárnym procesom a lineárnym modelom procesu. Jednoducho sa pridá do lineárneho modelu porucha, ktorá bude reprezentovať tento rozdiel. Takže rovnicu (2.1a) nahradíme novým systémom, rozšíreným o poruchu:
 \begin{subequations}
@@ -41,9 +41,9 @@ Jedným z najefektívnejších je pridať integračné vlastnosti regulátoru. P
 		&d_{k+1} = d_{k},
 	\end{align}
 \end{subequations}
-kde $d_{k}$ predstavuje poruchu v tvare stĺpcového vektora o velkosti $n_{x}$, $E$ je jednotková matica definovaná ako $E \in {\rm I\!R}^{n_{x}\times n_{x}}$.
+kde $d_{k}$ predstavuje poruchu v tvare stĺpcového vektora o veľkosti $n_{x}$, $E$ je jednotková matica definovaná ako $E \in {\rm I\!R}^{n_{x}\times n_{x}}$.
 
-Nastáva problém, odkiaľ sa získajú aktuálne hodnoty poruchy, reprezentujúcej odchýlku od nelinearity. Takýto člen sa nedá priamo merať senzorom, dá sa ale získať pomocou odhadu. Môžeme využiť buď Luenbergerov pozorovateľ, alebo pokročilejší, časovo premenný Kalmanov filter. V teórií riadenie tiež nazývaný ako pozorovač stavov po anglicky (state observer). Je to systém, ktorý poskytuje odhad vnútorných stavov daného systému pomocou jeho modelu, reálne odmeraných vstupov a výstupov. Pri modely systému, ktorý je rozšírený o poruchu rovnice (2.3) vie odhadnúť aj túto poruchu ako vnútorný stav. A pre príklad Luenbergerov pozorovateľ pre rozšírený systém o poruchu bude v nasledovnom tvare:
+Nastáva problém, odkiaľ sa získajú aktuálne hodnoty poruchy, reprezentujúcej odchýlku od nelinearity. Takýto člen sa nedá priamo merať senzorom, dá sa ale získať pomocou odhadu. Môžeme využiť buď Luenbergerov pozorovateľ, alebo pokročilejší, časovo premenný Kalmanov filter. V teórií riadenie ich tiež nazývame ako pozorovač stavov po anglicky (state observer). Je to systém, ktorý poskytuje odhad vnútorných stavov daného systému pomocou jeho modelu, reálne odmeraných vstupov a výstupov. Pri modely systému, ktorý je rozšírený o poruchu rovnice (2.3) vie odhadnúť aj túto poruchu ako vnútorný stav. A pre príklad Luenbergerov pozorovateľ pre rozšírený systém o poruchu bude v nasledovnom tvare:
 \begin{align}
 	\begin{bmatrix}
 		\hat{x}_{k+1}\\
@@ -69,25 +69,25 @@ Výsledná forma takto zadefinovaného MPC bude v nasledovnom tvare:
 	\begin{align}
 	\displaystyle \min_{u_0,...,u_{N-1}} \hspace{0.1cm}, & 
 	\sum_{k=1}^{N}\norm{Qx_k}^{2}_{2}+\sum_{k=0}^{N-1}\norm{Ru_k}^{2}_{2},\\
-	\textrm{s.t.} \hspace{0.5cm} & x_{k+1} = Ax_{k} + Bu_{k} + Ed_{0}\hspace{0.5cm} k=0,\dots,N-1,\\
+	\textrm{v.n.} \hspace{0.5cm} & x_{k+1} = Ax_{k} + Bu_{k} + Ed_{0}\hspace{0.5cm} k=0,\dots,N-1,\\
 	& x_{0} = x(t),\\
 	& d_{0} = \hat{d}(t),\\
 	& \underline{x} \leq x_{k} \leq \overline{x}\hspace{0.5cm} k=0,\dots,N,\\
 	& \underline{u} \leq u_{k} \leq \overline{u}\hspace{0.5cm} k=0,\dots,N-1,
 	\end{align}
 \end{subequations}
-kde $\hat{d}$ predstavuje odhadnutý rozdiel medzi lineárnym a nelineárnym modelom systému.
+kde $\hat{d}$ predstavuje odhadnutý rozdiel medzi lineárnym a nelineárnym modelom systému \cite{bib8}.
 
 \subsection{Nelineárne riadenie}
 \label{subse:NelinearneMPC}
 Ak by sme chceli predísť všetkým prídavkom k lineárnemu riadeniu a následnému ladeniu všetkých pridaných váhových matíc, je možnosť priamo vymeniť lineárny model za nelineárny. V rámci tejto práce sa budeme venovať práve takémuto nelineárnemu riadeniu, tak, že nahradíme lineárny model používaný v MPC priamo za nelineárny a budeme optimalizovať akčné zásahy vzhľadom k reálnemu modelu systému.
 
-Nelineárne rovnice budú vo forme diferenciálnych rovníc, ktoré následne diskretizujeme v rámci periódy vzorkovania systému. Takto získanú rovnicu použijeme miesto stavového opisu a výsledné MPC bude mať nasledovnú formu:
+Nelineárne rovnice budú vo forme diferenciálnych rovníc, ktoré následne diskretizujeme v rámci periódy vzorkovania daného systému. Takto získanú rovnicu použijeme miesto stavového opisu a výsledné MPC bude mať nasledovnú formu:
 \begin{subequations}
 	\begin{align}
 	\displaystyle \min_{u_0,...,u_{N-1}} \hspace{0.1cm}, & 
 	\sum_{k=1}^{N}\norm{Qx_k}^{2}_{2}+\sum_{k=0}^{N-1}\norm{Ru_k}^{2}_{2},\\
-	\textrm{s.t.} \hspace{0.5cm} & x_{k+1} = f(x_{k},u_{k},T_{s})\hspace{0.5cm} k=0,\dots,N-1,\\
+	\textrm{v.n.} \hspace{0.5cm} & x_{k+1} = f(x_{k},u_{k},T_{s})\hspace{0.5cm} k=0,\dots,N-1,\\
 	& x_{0} = x(t),\\
 	& \underline{x} \leq x_{k} \leq \overline{x}\hspace{0.5cm} k=0,\dots,N,\\
 	& \underline{u} \leq u_{k} \leq \overline{u}\hspace{0.5cm} k=0,\dots,N-1.

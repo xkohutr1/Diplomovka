@@ -1,4 +1,4 @@
-\chapter{Aplikácia}
+\chapter{Experimentálna časť}
 \label{part:Aplikacia}
 
 V tejto poslednej kapitole sa budeme venovať návrhu aplikácie, pomocou ktorej môžeme využívať decentralizované MPC s možnosťou paralelného riešenia na viacerých výpočtových zariadeniach. V rámci aplikácie bude možné pracovať s rôznymi lineárnymi aj nelineárnymi modelmi systému. Výstupom z aplikácie bude vypočítaný optimálny akčný zásah v danej perióde vzorkovania. Ďalej budeme využívať tento výstup pri simulácií riadenia na definovanom modeli systému. Alternatívou by bolo nahradenie simulácie reálnym systémom, ale bolo by nutné zaviesť úpravy. 
@@ -13,7 +13,7 @@ Aplikáciu delíme na dve časti, prvá je serverová a bude naprogramovaná v j
 	\caption{Zjednodušený diagram aplikácie pre jedného klienta}
 \end{figure}
 \newpage
-Na (Obr. 4.1) môžeme vidieť architektúru, ktorá slúžila ako základ pre našu aplikáciu. Klientská čast sa bude deliť na dve, prvá je používateľské rozhranie v ňom bude klient môcť ovládať simuláciu a sledovať výsledky z optimalizácie. Druhá časť je takzvaný výpočtový klient, táto časť bude reprezentovať numerickú optimalizáciu, ktorá bude prebiehať na pozadí prehliadača v JavaScripte. 
+Na (Obr. 4.1) môžeme vidieť architektúru, ktorá slúžila ako základ pre našu aplikáciu. Klientska čast sa bude deliť na dve, prvá je používateľské rozhranie, v ňom bude klient môcť ovládať simuláciu a sledovať výsledky z optimalizácie. Druhá časť je takzvaný výpočtový klient, táto časť bude reprezentovať numerickú optimalizáciu, ktorá bude prebiehať na pozadí prehliadača v JavaScripte. 
 \section{Server}
 Ako sme už spomínali, pre vytvorenie servera použijeme knižnicu Flask. Táto knižnica obsahuje micro web framwork pre programovací jazyk Python, inak povedané, podporuje vývoj webovej aplikácie, konkrétne web server. Nazývaný je micro, lebo je navrhnutý tak, aby jeho jadro bolo čo najjednoduchšie, ale podporuje rozšíriteľnosť pomocou už existujúcich knižníc. To je zároveň aj jeho najväčšia výhoda, nie je dopredu určené, aký druh databáz musíme používať, alebo v akej forme budeme odosielať a prijímať dáta, vo všetkom má developer voľnosť.
 \subsection{Nastavenie servera}
@@ -35,7 +35,7 @@ a nakoniec si zadefinujeme, na akom porte bude náš server fungovať.
 if __name__ == '__main__':
 	app.run(host='localhost', port=5000)
 \end{lstlisting}
-Takto nastavený server nájdeme na adrese http://localhost:5000/ rovnako ako náš, ktorý budeme poožívať v tomto projekte.
+Takto nastavený server nájdeme na adrese http://localhost:5000/ rovnako ako náš, ktorý budeme poožívať v tomto projekte\cite{bib4}.
 
 \subsection{Práca s databázou}
 Vďaka voľnosti, ktorú nám poskytuje Flask, sme si mohli vybrať zo širokej škály knižníc pre prácu s dátami. V dnešnej dobe sú databázy najpoužívanejšou a veľmi efektívnou formou, ako ukladať, aktualizovať a spravovať údaje. Takto uložené dáta sú v tabuľkovej podobe, kde každý stĺpec má preddefinovaný formát a veľkosť a každý riadok stĺpca má priradený jedinečný index, ktorý uľahčuje SQL (Structured Query Language) prehľadávanie v databáze.
@@ -45,7 +45,7 @@ My sme v tejto práci využili knižnicu SQLAlchemy, konkrétne jej upravenú ve
 Pomocou tejto knižnice sme si vytvorili štyri databázy, ktoré budeme používať v našej aplikácii. 
 \label{DB:Klient}
 \begin{enumerate}
-\item{ Databáza klientov - v tejto databáze budeme mať uložených všetkých klientov, ktorý pracujú alebo pracovali na optimalizácii, štruktúra databázy je nasledovná.
+\item{ Databáza klientov - v tejto databáze budeme mať uložených všetkých klientov, ktorý pracujú alebo pracovali na optimalizácii, štruktúra databázy je nasledovná:
 \begin{lstlisting}[language=Python]
 class Clients(db.Model):
 __bind_key__ = 'Clients'
@@ -57,7 +57,7 @@ Status = db.Column(db.Integer(2), index=True)
 \end{lstlisting}
 }
 \label{DB:OPT}
-\item{ Databáza optimalizačných úloh - táto databáza bude obsahovať všetky optimalizačné problémy (MPC), ktoré si vytvoríme zo zadefinovaných informácií od klienta. Budeme ju ďalej používať ako základ pre decentralizovanú optimalizáciu. Hlavnou vlastnosťou tejto databázy bude, že sa naplní iba raz v rámci jedného MPC a tieto údaje budú nemenné počas chodu aplikácie. Obsahuje nasledovné informácie.
+\item{ Databáza optimalizačných úloh - táto databáza bude obsahovať všetky optimalizačné problémy (MPC), ktoré si vytvoríme zo zadefinovaných informácií od klienta. Budeme ju ďalej používať ako základ pre decentralizovanú optimalizáciu. Hlavnou vlastnosťou tejto databázy bude, že sa naplní iba raz v rámci jedného MPC a tieto údaje budú nemenné počas chodu aplikácie. Obsahuje nasledovné informácie:
 \begin{lstlisting}[language=Python]
 class MPC_optimization(db.Model):
 __bind_key__ = 'MPC_optimization'
@@ -73,7 +73,7 @@ Status = db.Column(db.Integer(2), index=True)
 \end{lstlisting}
 }
 \label{DB:WORKER}
-\item{ Databáza distribuovaných optimalizačných úloh - táto databáza bude niesť informácie o distribuovanej optimalizačnej úlohe pre jednotlivých klientov. Na rozdiel od predošlej databázy, táto sa môže meniť počas chodu aplikácie, ale len vtedy, ak sa pripojí alebo odpojí klient z aplikácie. Databáza bude mať zadefinovanú nasledovnú podobu. 
+\item{ Databáza distribuovaných optimalizačných úloh - táto databáza bude niesť informácie o distribuovanej optimalizačnej úlohe pre jednotlivých klientov. Na rozdiel od predošlej databázy, táto sa môže meniť počas chodu aplikácie, ale len vtedy, ak sa pripojí alebo odpojí klient z aplikácie. Databáza bude mať zadefinovanú nasledovnú podobu:
 \begin{lstlisting}[language=Python]
 class MPC_Worker(db.Model):
 __bind_key__= 'MPC_Worker'
@@ -86,7 +86,7 @@ Status = db.Column(db.Integer(2), index=True)
 \end{lstlisting}
 }
 \label{DB:WORKER_DATA}
-\item{ Databáza výsledkov po optimalizácii - posledná databáza, s ktorou budeme pracovať v rámci tejto aplikácie. Na rozdiel od predošlých databáz, táto sa vytvorí pre každú optimalizovanú premennú a bude sa aktualizovať po každej optimalizácii. Štruktúra databázy je nasledovná.
+\item{ Databáza výsledkov po optimalizácii - posledná databáza, s ktorou budeme pracovať v rámci tejto aplikácie. Na rozdiel od predošlých databáz, táto sa vytvorí pre každú optimalizovanú premennú a bude sa aktualizovať po každej optimalizácii. Štruktúra databázy je nasledovná:
 \begin{lstlisting}[language=Python]
 class MPC_Worker_data(db.Model):
 __bind_key__= 'MPC_Worker_data'
@@ -104,7 +104,7 @@ Status = db.Column(db.Integer(2), index=True)
 Komunikácia medzi serverom a klientom bude prebiehať dvoma rôznymi spôsobmi. Pre jednorázové akcie, ako je odoslanie formulára alebo pripojenie či odpojenie zo servera, využijeme HTTP requesty, konkrétne metódy POST a GET. Pre častú komunikáciu ako bude odosielanie dát na optimalizáciu alebo zmena referencie v simulácii je omnoho lepšou možnosťou otvoriť komunikačný kanál medzi serverom a klientom. Tento kanál bude sprostredkovávaný pomocou WebSocket protokolu a zjednoduší komunikáciu. Server tak bude môcť rovno odosielať dáta klientovi, bez toho aby o ne musel najskôr požiadať. 
 
 \subsubsection{HTTP}
-HTTP je skratka z angličtiny (Hypertext Transfer Protocol) a predstavuje protokol, ktorý bol určený na výmenu hypertextových dokumentov medzi serverom a prehliadačom (klientom). Funguje na nasledovnom princípe, klient zašle požiadavku (request) a čaká na odpoveď zo strany servera, ktorý odpovedá zaslaním HTML súboru alebo iného obsahu, môže vykonať nejakú funkciu či odpovedať správou späť klientovi. 
+HTTP je skratka z angličtiny (Hypertext Transfer Protocol) a predstavuje protokol, ktorý bol určený na výmenu hypertextových dokumentov medzi serverom a prehliadačom (klientom). Funguje na nasledovnom princípe, klient zašle požiadavku (request) a čaká na odpoveď zo strany servera, ktorý odpovedá zaslaním HTML súboru alebo iného obsahu, môže vykonať nejakú funkciu či odpovedať správou späť klientovi. \cite{bib5}
 
 HTTP poskytuje viacero request metód, ktoré hovoria o tom, akú odpoveď očakáva klient zo strany servera. My budeme využívať dve najpoužívanejšie metódy.
 \begin{enumerate}
@@ -115,7 +115,7 @@ HTTP poskytuje viacero request metód, ktoré hovoria o tom, akú odpoveď očak
 \end{enumerate}
 
 \subsubsection{WebSockets}
-WebSockets je iná forma prijímania a odosielanie dát medzi serverom a prehliadačom ako tomu bolo pri HTTP. Poskytuje komunikáciu v oboch smeroch (klient-server) cez jediné TCP (Transmission Control Protocol) pripojenie. Pomocou WebSocekt aplikácie vieme vytvoriť obojstrannú komunikáciu, kde klient môže cez prehliadač poslať správy (dáta) na server a tiež môže dostať odpoveď od servera na základe nejakých udalostí bez toho, aby o ne musel požiadať.
+WebSockets je iná forma prijímania a odosielanie dát medzi serverom a prehliadačom ako tomu bolo pri HTTP. Poskytuje komunikáciu v oboch smeroch (klient-server) cez jediné TCP (Transmission Control Protocol) pripojenie. Pomocou WebSocekt aplikácie vieme vytvoriť obojstrannú komunikáciu, kde klient môže cez prehliadač poslať správy (dáta) na server a tiež môže dostať odpoveď od servera na základe nejakých udalostí bez toho, aby o ne musel požiadať. \cite{bib6}
 
 Na rozdiel od HTTP, na vytvorenie takejto komunikácie budeme potrebovať dve knižnice, jednu pre Flask server a druhú pre klienta (JavaScript). Na strane servera budeme využívať flask-SocetIO, táto knižnica nám zmení nastavenia servera (konkrétne definovanie portu) a to tak, že nám obalí pôvodný server. Zmena bude nasledovná.
 \begin{lstlisting}[language=Python]
@@ -124,7 +124,7 @@ socketio = SocketIO(app)
 if __name__ == '__main__':
 	socketio.run(app, host='localhost', port=5000)
 \end{lstlisting}
-Pre JavaScript použijeme knižnicu Socet.IO, ktorú si pridáme pomocou webového linku. Je nutné sa pripojiť na adresu, kde bude komunikácia prebiehať, v našom prípade je to adresa servera.
+Pre JavaScript použijeme knižnicu Socet.IO, ktorú si pridáme pomocou webového linku. Je nutné sa pripojiť na adresu, kde bude komunikácia prebiehať, v našom prípade je to adresa servera \cite{bib3}.
 \begin{lstlisting}[language=Java]
 var socket = io.connect('http://localhost:5000/');
 \end{lstlisting}
@@ -175,13 +175,13 @@ Na (Obr. 4.4) máme zobrazený panel, pomocou ktorého môžeme ovládať simul�
 Pre sledovanie simulácie budeme mať k dispozícii dva dynamické grafy, ktoré budú zobrazovať údaje v reálnom čase, a to pomocou JavaScript knižnice Chart.js. Táto knižnica je voľne dostupná na internete, bude nám poskytovať možnosť vytvorenia interaktívnych grafov a veľkú voľnosť, vďaka ktorej môžeme premeniť statické grafy na dynamické. Nad grafom bude zobrazená legenda s príslušnými veličinami, a tiež bude fungovať ako panel ovládania, pomocou ktorého môžeme pridávať a odoberať veličiny z grafu. 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=13cm,height=6cm]{images/graf_stavov}
+	\includegraphics[width=13cm,height=7cm]{images/graf_stavov}
 	\caption{Vývoj stavov počas riadenia}
 \end{figure}
 Na grafe vyššie (Obr. 4.5) bude zobrazený priebeh riadenia jednotlivých stavov a ich referencie.
 \begin{figure}[H]	
 	\centering
-	\includegraphics[width=13cm,height=6cm]{images/graf_vstupov}
+	\includegraphics[width=13cm,height=7cm]{images/graf_vstupov}
 	\caption{Vývoj akčných zásahov počas riadenia}
 \end{figure}
 Druhý graf, ktorý budeme mať k dispozícii, je graf vstupov do systému. Bude nám slúžiť pre sledovanie akčných zásahov z MPC.
@@ -189,13 +189,13 @@ Druhý graf, ktorý budeme mať k dispozícii, je graf vstupov do systému. Bude
 \section{Logická postupnosť aplikácie}
 V tejto podkapitole si rozoberieme rozloženie aplikácie a podrobne si vysvetlíme jej logickú postupnosť. Na \hyperref[fig:ArchitekturaAPK]{(Obr. 4.7)} sme si mohli pozrieť zjednodušený diagram našej aplikácie. Zjednodušený preto, lebo obsahuje iba najhlavnejšie akcie, ktoré sa vykonávajú v aplikácii a je zobrazený iba jeden klient, ktorý otvoril MPC. My si však ideme vysvetliť podrobnejšiu schému, kde si detailne rozoberieme aj menšie akcie a budú v nej zapojení viacerí klienti.
 \begin{description}
-\item[1. Klient 1:]{\hfill
+\item[1. Používateľ 1:]{\hfill
 	\begin{enumerate}
 		\item{
-			Klient sa pripojí na http://localhost:5000/, pomocou tlačidla si vyberie prediktívne riadenie (Model Predictive Control), odošle GET request na server. Sever vytvorí nový záznam v \hyperref[DB:Klient]{databáze klientov} a priradí mu vlastné ID. Ako odpoveď mu vráti HTML stránku, kde bude mať na výber vytvoriť nové prediktívne riadenie (New Model Predictive Control), po stlačení bude rovnako presmerovaný na formulár.
+			Používateľ sa pripojí na http://localhost:5000/, pomocou tlačidla si vyberie prediktívne riadenie (Model Predictive Control), odošle GET request na server. Sever vytvorí nový záznam v \hyperref[DB:Klient]{databáze klientov} a priradí mu vlastné ID. Ako odpoveď mu vráti HTML stránku, kde bude mať na výber vytvoriť nové prediktívne riadenie (New Model Predictive Control), po stlačení bude rovnako presmerovaný na formulár.
 		}
 		\item{
-			Ako sme popísali v časti \hyperref[subse:Formular]{(4.3.1)}, klient bude musieť zadefinovať všetky potrebné parametre MPC a všetky potrebné polia pre definovanie modelu systému. Potvrdením sa formulár zvaliduje, ak prejde validáciou je odoslaný na server pomocou request metódy POST.
+			Ako sme popísali v časti \hyperref[subse:Formular]{(4.3.1)}, používateľ bude musieť zadefinovať všetky potrebné parametre MPC a všetky potrebné polia pre definovanie modelu systému. Potvrdením sa formulár zvaliduje, ak prejde validáciou je odoslaný na server pomocou request metódy POST.
 		}
 	\end{enumerate}
 }
@@ -205,20 +205,20 @@ V tejto podkapitole si rozoberieme rozloženie aplikácie a podrobne si vysvetl�
 			Server spracuje prijaté dáta z formulára, na základe toho či príde diferenciálna rovnica alebo stavový opis systému, upraví tieto rovnice a vytvorí všeobecný model systému. Ostatné dáta sú spracované z textovej podoby do použiteľnej formy.
 		}
 		\item{
-			Následne sú dáta využité pre vytvorenie účelovej funkcie podľa všeobecného vzoru, ktorý sme si ukázali v časti \hyperref[subse:MPC]{(2.1.1)} pre definovaný predikčný horizont $Nmin$. Ak sú zadefinované ohraničenia, tak sa pridajú do účelovej funkcie podľa teórie, ktorú sme si ukázali v časti \hyperref[subse:Ohranicenia]{(2.5.3)}. V ďalšom kroku sa vytvorí nový záznam v \hyperref[DB:OPT]{databáze optimalizačných úloh} so všeobecnými informáciami od Klienta 1.
+			Následne sú dáta využité pre vytvorenie účelovej funkcie podľa všeobecného vzoru, ktorý sme si ukázali v časti \hyperref[subse:MPC]{(2.1.1)} pre definovaný predikčný horizont $Nmin$. Ak sú zadefinované ohraničenia, tak sa pridajú do účelovej funkcie podľa teórie, ktorú sme si ukázali v časti \hyperref[subse:Ohranicenia]{(2.5.3)}. V ďalšom kroku sa vytvorí nový záznam v \hyperref[DB:OPT]{databáze optimalizačných úloh} so všeobecnými informáciami od používateľa 1.
 		}
 		\item{
-			 Ako posledná úprava sa do účelovej funkcie dosadí vytvorený všeobecný model systému v konkrétnych predikčných horizontoch. Potom sa vytvorí gradient účelovej funkcie vzhľadom k optimalizovaným premenným a vygenerujú sa počiatočné nástrely. Z takýchto údajov sa vytvorí prvý záznam v \hyperref[DB:WORKER]{databáze distribuovaných optimalizačných úloh} a tiež záznam pre každú premennú v \hyperref[DB:WORKER_DATA]{databáze výsledkov po optimalizácií}. Vzhľadom na to, že je prihlásený iba jeden klient, bude sa jednať o normálne centralizované MPC.
+			 Ako posledná úprava sa do účelovej funkcie dosadí vytvorený všeobecný model systému v konkrétnych krokoch predikčného horizontu. Potom sa vytvorí gradient účelovej funkcie vzhľadom k optimalizovaným premenným a vygenerujú sa počiatočné nástrely. Z takýchto údajov sa vytvorí prvý záznam v \hyperref[DB:WORKER]{databáze distribuovaných optimalizačných úloh} a tiež záznam pre každú premennú v \hyperref[DB:WORKER_DATA]{databáze výsledkov po optimalizácií}. Vzhľadom na to, že je prihlásený iba jeden klient, bude sa jednať o normálne centralizované MPC.
 		}
 		\item{
-			Ako odpoveď na prijaté dáta z formulára server vráti HTML stránku spolu s informáciou o IDčku klienta.
+			Ako odpoveď na prijaté dáta z formulára server vráti HTML stránku spolu s informáciou o IDčku používateľa.
 		}
 	\end{enumerate}
 }
-\item[3. Klient 1:]{\hfill
+\item[3. Používateľ 1:]{\hfill
 \begin{enumerate}
 \item{
-Klient je na poslednej, a zároveň hlavnej HTML stránke, ktorú sme si predstavili v časti \hyperref[subse:OPTaSIM]{(4.3.2)}. Ako prvé sa pripojí cez JavaScript na WebSoket kanál, kde bude odosielať a dostávať správy.
+Používateľ je na poslednej, a zároveň hlavnej HTML stránke, ktorú sme si predstavili v časti \hyperref[subse:OPTaSIM]{(4.3.2)}. Ako prvé sa pripojí cez JavaScript na WebSoket kanál, kde bude odosielať a dostávať správy.
 }
 \item{
 Cez tento komunikačný kanál zašle serveru správu, že je pripravený na prijatie dát. Server mu odpovie zaslaním dát z databáz v podobe Jason
@@ -226,35 +226,35 @@ Cez tento komunikačný kanál zašle serveru správu, že je pripravený na pri
 {"Klient_ID":[Gradient, Premenna, Hodnota, Funkcia]}
 \end{lstlisting}
 }
-\item{Po obdržaní dát, sa zavolá funkcia pre numerickú optimalizáciu a tá vyrieši optimalizačný problém. Výsledok po optimalizácii sa pošle cez WebSocet kanál na sever a následne sa tento výsledok objaví v \hyperref[fig:Tabulka]{tabuľke výsledkov}.}
+\item{Po obdržaní dát, sa zavolá výpočtový klient (funkcia pre numerickú optimalizáciu) a tá vyrieši optimalizačný problém. Výsledok po optimalizácii sa pošle cez WebSocet kanál na sever a následne sa tento výsledok objaví v \hyperref[fig:Tabulka]{tabuľke výsledkov}.}
 \end{enumerate}
 }
 \item[4. Server:]{\hfill
 \begin{enumerate}
 \item{
-Server dostane dáta a aktualizuje \hyperref[DB:WORKER_DATA]{databázu výsledkov po optimalizácií}. Keďže je stále pripojený iba jeden klient, nemáme distribuovanú optimalizačnú úlohu, teda nevyužívame ani ADMM. V takejto situácii považujeme obdržané dáta za optimálne akčné zásahy z MPC.
+Server dostane dáta a aktualizuje \hyperref[DB:WORKER_DATA]{databázu výsledkov po optimalizácií}. Keďže je stále pripojený iba jeden používateľ, nemáme distribuovanú optimalizačnú úlohu, teda nevyužívame ani ADMM. V takejto situácii považujeme obdržané dáta za optimálne akčné zásahy z MPC.
 }
 \item{
 Server zavolá simuláciu, pomocou vypočítaných akčných zásahov a počiatočných stavov vypočíta nové stavy a aktualizuje ich v \hyperref[DB:WORKER_DATA]{databáze výsledkov po optimalizácií}.
 }
 \item{
-Ako posledný krok vytvorí nové dáta pre optimalizáciu z databázy v podobe Jason a odošle ich cez komunikačný kanál klientovi.
+Ako posledný krok vytvorí nové dáta pre optimalizáciu z databázy v podobe Jason a odošle ich cez komunikačný kanál používateľovi.
 }
 \end{enumerate}
 }
-\item[5. Klient 1:]{\hfill
+\item[5. Používateľ 1:]{\hfill
 	\begin{enumerate}
-		\item{Klient opäť obdrží dáta, zavolá sa funkcia pre numerickú optimalizáciu, tá vyrieši optimalizačný problém. Výsledok po optimalizácii sa pošle cez WebSocet kanál na sever a následne sa tento výsledok objaví v \hyperref[fig:Tabulka]{tabuľke výsledkov}.}
+		\item{Klient opäť obdrží dáta, zavolá výpočtového klienta, ten vyrieši optimalizačný problém. Výsledok po optimalizácii sa pošle cez WebSocet kanál na sever a následne sa tento výsledok objaví v \hyperref[fig:Tabulka]{tabuľke výsledkov}.}
 	\end{enumerate}
 }
 \item[6. Cyklus:]{\hfill
 	\begin{enumerate}
-		\item{V tomto momente vznikne cyklus (od kroku 4. po 5.) a bude sa opakovať, až kým sa nepripojí nový klient.}
+		\item{V tomto momente vznikne cyklus (od kroku 4. po 5.) a bude sa opakovať, až kým sa nepripojí nový používateľ.}
 	\end{enumerate}
 }
-\item[7. Klient 2:]{\hfill
+\item[7. Používateľ 2:]{\hfill
 	\begin{enumerate}
-		\item{Rovnako ako klient 1 sa aj klient 2 pripojí k serveru na adrese http://localhost:5000/,  pomocou tlačidla si vyberie prediktívne riadenie. V tomto okamžiku má na výber už z dvoch možností, pripojiť sa k prebiehajúcemu riadeniu (talčidlo Join MPC), alebo môže založiť ďalšie riadenie rovnako ako klient 1. Ak by si vybral zloženie nového riadenia, pokračoval by rovnako ako klient 1.}
+		\item{Rovnako ako používateľ 1 sa aj používateľ 2 pripojí k serveru na adrese http://localhost:5000/,  pomocou tlačidla si vyberie prediktívne riadenie. V tomto okamžiku má na výber už z dvoch možností, pripojiť sa k prebiehajúcemu riadeniu (talčidlo Join MPC), alebo môže založiť ďalšie riadenie rovnako ako používateľ 1. Ak by si vybral zloženie nového riadenia, pokračoval by rovnako ako používateľ 1 od kroku 1.}
 		\item{
 			Po pripojení sa k prebiehajúcemu riadeniu, odošle serveru request a ten mu pošle naspäť HTML stránku a priradí mu ID.
 		}
@@ -266,55 +266,57 @@ Ako posledný krok vytvorí nové dáta pre optimalizáciu z databázy v podobe 
 \item[8. Server :]{\hfill
 	\begin{enumerate}
 		\item{
-			Server obdrží správu, že sa pripojil ďalší klient k riadeniu a preruší cyklus v korku 6.
+			Server obdrží správu, že sa pripojil ďalší používateľ k riadeniu a preruší cyklus v korku 6.
 		}
 		\item{
-			Zavolá \hyperref[DB:OPT]{databázu optimalizačných úloh} a nájde príslušné MPC, ku ktorému sa klient pripojil. Následne na to si zistí, koľko klientov je aktívnych a aký je $Nmin$ (minimálny predikčný horizont). Na základe tejto informácie vytvorí decentralizovaný optimalizačný problém zo všeobecnej rovnice a modelu systému. Postupuje podla teórie uvedenej v časti \hyperref[subse:Nelin_MPC_ADMM]{(2.5.2)} s výnimkou, že sa nebude uvažovať plná decentralizácia, ale rozdelí sa príslušný počet predikčných horizontov medzi klientov.
+			Zavolá \hyperref[DB:OPT]{databázu optimalizačných úloh} a nájde príslušné MPC, ku ktorému sa používateľ pripojil. Následne na to si zistí, koľko používateľ je aktívnych a aký je $Nmin$ (minimálny predikčný horizont). Na základe tejto informácie vytvorí decentralizovaný optimalizačný problém zo všeobecnej rovnice a modelu systému. Postupuje podla teórie uvedenej v časti \hyperref[subse:Nelin_MPC_ADMM]{(2.5.2)} s výnimkou, že sa nebude uvažovať plná decentralizácia, ale rozdelí sa počet príslušných korkov predikčného horizontu medzi používateľov.
 		}
 		\item{
 			Po vytvorení distribuovaného optimalizačného problému sa aktualizuje \hyperref[DB:WORKER]{databáza distribuovaných optimalizačných úloh} a \hyperref[DB:WORKER_DATA]{databáza výsledkov po optimalizácii}. S drobnou obmenou sa ako nástrel pre optimalizáciu využijú staré údaje a nebudú sa generovať nové. 
 		}
 		\item{
-			Po aktualizácii údajov server zašle dáta cez komunikačný kanál všetkým klientom vo formáte Jason.
+			Po aktualizácii údajov server zašle dáta cez komunikačný kanál všetkým používateľom vo formáte Jason.
 		}
 	\end{enumerate}
 }
 \item[9. Cyklus:]{\hfill
 	\begin{enumerate}
 		\item{V tomto momente vznikne nový cyklus, ale komplikovanejší ako bol v kroku 6., pridá sa totiž ADMM k simulácii (budeme mať cyklus v cykle)}
-		\item{Klienti obdržia dáta, zavolajú funkciu pre numerickú optimalizáciu a tá vyrieši optimalizačný problém. Výsledok po optimalizácii sa pošle cez WebSocet kanál na sever a následne sa tento výsledok objaví v \hyperref[fig:Tabulka]{tabuľke výsledkov}.}
+		\item{Používatelia obdržia dáta, zavolajú výpočtových klientov a tí vyriešia optimalizačný problém. Výsledok po optimalizácii sa pošle cez WebSocet kanál na sever a následne sa tento výsledok objaví v \hyperref[fig:Tabulka]{tabuľke výsledkov}.}
 		\item{
-			Server čaká, kým neobdrží výsledky od všetkých klientov. Potom spracuje výsledky, aktualizuje databázy a duálnu funkciu. Následne na to vyhodnotí kritériá pre zastavenie ADMM. Ak nie sú splnené, pošle aktualizované dáta klientom a pokračuje od korku 2 (9. Cyklu). Ak sú kritériá splnené, považujeme výsledok za optimálne akčné zásahy. Ďalej server zavolá simuláciu pomocou vypočítaných akčných zásahov a počiatočných stavov, vypočíta nové stavy a aktualizuje ich v \hyperref[DB:WORKER_DATA]{databáze výsledkov po optimalizácii} a pokračuje od kroku 2 (9. Cyklu).
+			Server čaká, kým neobdrží výsledky od všetkých používateľov. Potom spracuje výsledky, aktualizuje databázy a duálnu funkciu. Následne na to vyhodnotí kritériá pre zastavenie ADMM. Ak nie sú splnené, pošle aktualizované dáta používateľom a pokračuje od korku 2 (9. Cyklu). Ak sú kritériá splnené, považujeme výsledok za optimálne akčné zásahy. Ďalej server zavolá simuláciu pomocou vypočítaných akčných zásahov a počiatočných stavov, vypočíta nové stavy a aktualizuje ich v \hyperref[DB:WORKER_DATA]{databáze výsledkov po optimalizácii} a pokračuje od kroku 2 (9. Cyklu).
 		}
 	\end{enumerate}
 }
 \end{description}
-Vysvetlili sme si princíp fungovania aplikácie pri pripojení dvoch klientov. Ak by sa pripojilo viac, než dvaja klienti, nespôsobí to problém, a postup bude vždy rovnaký od korku 7. Zmena môže nastať v dvoch prípadoch.
+Vysvetlili sme si princíp fungovania aplikácie pri pripojení dvoch používateľov. Ak by sa pripojilo viac, než dvaja používatelia, nespôsobí to problém, a postup bude vždy rovnaký od korku 7. Zmena môže nastať v dvoch prípadoch.
 \begin{enumerate}
 	\item{
-	 Pripojí sa viac klientov ako je minimálny predikčný horizont, v takom prípade už máme maximálne decentralizovaný optimalizačný problém. Zmena nastane v tom, že sa nemá už aký predikčný horizont prideliť klientovi, a teda sa vytvorí nový predikčný horizont nad rámec minimálneho predikčného horizontu.
+	 Pripojí sa viac používateľov ako je minimálny predikčný horizont, v takom prípade už máme maximálne decentralizovaný optimalizačný problém. Zmena nastane v tom, že už nemáme k dispozícií žiadny voľní krok predikčného horizontu. Teda je nutné vytvoriť nový krok predikčného horizontu nad rámec minimálneho predikčného horizontu a ten sa priradí používateľovi.
 	}
 	\item{
-	Ak sa nejaký klient odpojí z riadenia, preruší sa cyklus v korku 9., na čo server zareaguje ako pri pridaní klienta do riadenia (krok 8.), len miesto toho, aby prepočítal distribúciu optimalizácie o klienta navyše, odoberie jedného. 
+	Ak sa nejaký používateľ odpojí z riadenia, preruší sa cyklus v korku 9., na čo server zareaguje ako pri pridaní klienta do riadenia (krok 8.), len miesto toho, aby prepočítal distribúciu optimalizácie o používateľa navyše, odoberie jedného. 
 	}
 \end{enumerate}
-Celú aplikáciu sme zverejnili githube spolu s možnosťou vytvorenia docker súboru.  Ten umožňuje spustenie servera na hocikom operačnom systéme a nie je nutné mať nainštalované, žiadne programovacie jazyky alebo špeciálne knižnice.
+Celú aplikáciu sme zverejnili na githube spolu s možnosťou vytvorenia docker kontajneru link je nasledovný (\url{https://github.com/xkohutr1/Diplomovka.git}). Docker umožňuje spustenie servera na hocikom operačnom systéme a nie je nutné mať nainštalované, žiadne programovacie jazyky alebo špeciálne knižnice.
 
 \section{Experiment}
-V poslednej časti tejto kapitoly overíme funkčnosť navrhnutej aplikácie na simulácii, a to pri rovnakých podmienkach, ako v časti \hyperref[sec:HB]{(3.1)}. Prihlásime prvého klienta, ten zadefinuje všetky potrebné informácie do formulára, ale bez skokovej zmeny, a odošle ho na server. Postupne pridáme štyroch ďalších klientov, aby sme zabezpečili plnú decentralizáciu optimalizačného problému, ako tomu bolo v časti \hyperref[sec:HB]{(3.1)}. Keď sú všetci klienti pripravení, vykonáme v kroku $10$ skokovú zmenu pomocou zmeny referencie z počiatočných stavov do nuly.
+V poslednej časti tejto kapitoly overíme funkčnosť navrhnutej aplikácie na simulácii, a to pri rovnakých podmienkach, ako v časti \hyperref[sec:HB]{(3.1)}. Prihlásime prvého používateľa, ten zadefinuje všetky potrebné informácie do formulára, ale bez skokovej zmeny, a odošle ho na server. Postupne pridáme štyroch ďalších používateľov, aby sme zabezpečili plnú decentralizáciu optimalizačného problému, ako tomu bolo v časti \hyperref[sec:HB]{(3.1)}. Keď sú všetci používatelia pripravení, vykonáme v kroku $10$ skokovú zmenu pomocou zmeny referencie z počiatočných stavov do nuly.
+\begin{center}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=13cm,height=6.5cm]{images/Hmotny_bod_apk/x0}
+		\caption{Priebeh riadenia pre prvý stav systému}
+	\end{figure}
+\end{center}
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=13cm,height=7cm]{images/Hmotny_bod_apk/x0}
-	\caption{Priebeh riadenia pre prvý stav systému}
-\end{figure}
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=13cm,height=7cm]{images/Hmotny_bod_apk/x1}
+	\includegraphics[width=13cm,height=6.5cm]{images/Hmotny_bod_apk/x1}
 	\caption{Priebeh riadenia pre druhý stav systému}
 \end{figure}
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=13cm,height=7cm]{images/Hmotny_bod_apk/u}
+	\includegraphics[width=13cm,height=6.5cm]{images/Hmotny_bod_apk/u}
 	\caption{Vývoj akčných zásahov}
 \end{figure}
-Na grafoch (Obr. 4.8 až 4.10) môžeme vidieť priebeh simulácie. Pri porovnaní so simuláciou, ktorú sme vykonali v programovacom jazyku Matlab zistíme, že sú priebehy totožné, a preto považujeme našu aplikáciu za funkčnú. 
+Na grafoch (Obr. 4.8 až 4.10) môžeme vidieť priebeh simulácie. Pri porovnaní so simuláciou, ktorú sme vykonali v programovacom jazyku Matlab \hyperref[sec:HB]{(3.1)} zistíme, že sú priebehy totožné, a preto považujeme našu aplikáciu za funkčnú. 

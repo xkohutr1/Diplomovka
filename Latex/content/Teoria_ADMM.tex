@@ -5,7 +5,7 @@ Zvyčajne, pri všeobecnej optimalizačnej úlohe, si ako prvé zadefinujeme ú�
 	\begin{align}
 		\displaystyle \min_{x} \hspace{0.5cm} & 
 		f(x),\\
-		\textrm{s.t.} \hspace{0.5cm} & Lx = v.
+		\textrm{v.n.} \hspace{0.5cm} & Lx = v.
 	\end{align}
 \end{subequations}
 V tejto práci ale využijeme takzvanú decentralizáciu optimalizačného problému. Optimalizačnú úlohu si rozložíme na viacero častí $ f(x) = g(z) + h(y)$ a každú riešime samostatne. Výsledkom bude viacero decentralizovaných riešení. Rovnice (2.9) si rozdelíme vzhľadom k jednotlivým premenným a budú mať nasledovný tvar:
@@ -13,7 +13,7 @@ V tejto práci ale využijeme takzvanú decentralizáciu optimalizačného probl
 	\begin{align}
 		\displaystyle \min_{} \hspace{0.5cm} & 
 		g(z) + h(y),\\
-		\textrm{s.t.} \hspace{0.5cm} & L_{1}z = v_1,\\
+		\textrm{v.n.} \hspace{0.5cm} & L_{1}z = v_1,\\
 		& L_{2}y = v_2.
 	\end{align}
 \end{subequations}
@@ -32,7 +32,7 @@ Formulácia optimalizačného problému pre ADMM je v nasledovnom tvare:
 	\begin{align}
 		\displaystyle \min_{y,z} \hspace{0.5cm} & 
 		g(z) + h(y),\\
-		\textrm{s.t.} \hspace{0.5cm} & H_{1}z + H_{2}y = b,
+		\textrm{v.n.} \hspace{0.5cm} & H_{1}z + H_{2}y = b,
 	\end{align}
 \end{subequations}
 kde $y$ a $z$ sú optimalizované premenné, ktoré sú definované nasledovne $y \in {\rm I\!R}^n $, $ z\in {\rm I\!R}^m$. Rovnica (2.11b) predstavuje novú podmienku, ktorá prepája decentralizované premenné, matica $H_{1}$, $H_{2}$ a vektor $b$ sú skonštruované tak, aby podmienky boli vhodné pre všetky prípady, ich rozmery sú $H_{1} \in {\rm I\!R}^{p \times n}$, $H_{2} \in {\rm I\!R}^{p \times m}$ a teda vo výsledku je vektor $b \in {\rm I\!R}^p $. 
@@ -46,12 +46,12 @@ Rozšírenie Lagrangianovej funkcie predstavuje posledný člen $\frac{\rho}{2} 
 \label{math:ADMM_iteracie}
 \begin{subequations}
 	\begin{align}
-		&z^{(i+1)} = \argmin_{z} \mathcal{L}_{\rho} \left(z,y^{i},\lambda^{i} \right),\\
-		&y^{(i+1)} = \argmin_{y} \mathcal{L}_{\rho} \left(z^{i},y,\lambda^{i} \right),\\
-		&\lambda^{(i+1)} = \lambda^{i} + \rho( H_{1}z^{(i+1)} + H_{2}y^{(i+1)} - b ),
+		&z^{(i+1)} = \argmin_{z} \mathcal{L}_{\rho} \left(z,y^{(i)},\lambda^{(i)} \right),\\
+		&y^{(i+1)} = \argmin_{y} \mathcal{L}_{\rho} \left(z^{(i)},y,\lambda^{(i)} \right),\\
+		&\lambda^{(i+1)} = \lambda^{(i)} + \rho\left( H_{1}z^{(i+1)} + H_{2}y^{(i+1)} - b \right),
 	\end{align}
 \end{subequations}
-kde $\rho > 1$. Táto iteračná metóda prebieha v takzvanom duálnom framworku, ktorý sa skladá z primárneho problému (minimalizácia $z$, minimalizácie $y$) a aktualizácie duálneho problému $\lambda$. V poslednom vzťahu, kde sa aktualizuje duálna premenná, je aplikovaný podobný postup ako v numerickej gradientovej metóde, ale vykoná sa iba raz, $\rho$ tu predstavuje dĺžku kroku. Funkcia tohoto duálneho problému je konkávna, a teda sa ľahko maximalizuje, čo nespôsobuje ťažkosti, ak náš primárny problém je konvexný. Ak primárny problém spĺňa konvexnosť tak jeho minimum korešponduje s maximom duálneho problému. Preto neoptimalizujeme v smere poklesu (ako tomu je pri minimalizácii v gradientovej metóde), ale hýbeme sa v smere rastu\cite{bib1}. 
+kde $\rho > 1$ a $i$ hovorí o tom v akej iterácií sa nachádzame. Táto iteračná metóda prebieha v takzvanom duálnom framworku, ktorý sa skladá z primárneho problému (minimalizácia $z$, minimalizácie $y$) a aktualizácie duálneho problému $\lambda$. V poslednom vzťahu, kde sa aktualizuje duálna premenná, je aplikovaný podobný postup ako v numerickej gradientovej metóde, ale vykoná sa iba raz, $\rho$ tu predstavuje dĺžku kroku. Funkcia tohoto duálneho problému je konkávna, a teda sa ľahko maximalizuje, čo nespôsobuje ťažkosti, ak náš primárny problém je konvexný. Ak primárny problém spĺňa konvexnosť tak jeho minimum korešponduje s maximom duálneho problému. Preto neoptimalizujeme v smere poklesu (ako tomu je pri minimalizácii v gradientovej metóde), ale hýbeme sa v smere rastu\cite{bib1}. 
 \label{subse:ADMM2}
 
 Postup pri iterácií v ADMM:
