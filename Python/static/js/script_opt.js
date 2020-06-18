@@ -71,12 +71,12 @@ function gdmethod(grad_data){
 
                 if(pom_var.includes('grad') == true){
                     use_grad = 'Use only gradient';
-                }else{
+                }else if(pom_var != 'tni'){
                     var pom_hess2 = math.derivative(pom_grad,pom_var);
                     pom_hess2 = pom_hess2.toString();
                     pom_hess.push(pom_hess2);
                 }
-            }else{
+            }else if(pom_var != 'tni'){
                 pom_hess.push(0);
             }
             //////////////////////////////////////////////// FUNCTION //////////////////////////////////////////////////
